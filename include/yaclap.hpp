@@ -30,6 +30,10 @@
 
 #pragma once
 
+#include <string>
+#include <string_view>
+#include <vector>
+
 namespace yaclap
 {
 
@@ -49,6 +53,26 @@ namespace yaclap
 	class Option
 	{
 	public:
+		template<typename ST1, typename ST2>
+		Option(const ST1& name, const ST2& description, bool isRequired = false)
+			: m_description(description), m_isRequired{ isRequired }
+		{
+			AddAlias(name);
+		}
+		Option() = default;
+		~Option() = default;
+
+		template<typename ST>
+		Option& AddAlias(const ST& name)
+		{
+			m_names.push_back(name);
+			return *this;
+		}
+
+	private:
+		std::vector<std::string> m_names;
+		std::string m_description;
+		bool m_isRequired;
 	};
 
 	template<typename CHAR>
