@@ -33,7 +33,41 @@
 namespace yaclap
 {
 
+	template<typename CHAR>
+	class Command
+	{
+	public:
+	};
 
+	template<typename CHAR>
+	class Argument
+	{
+	public:
+	};
+
+	template<typename CHAR>
+	class Option
+	{
+	public:
+	};
+
+	template<typename CHAR>
+	class Switch
+	{
+	public:
+	};
+
+	template<typename CHAR>
+	class Parser
+	{
+	public:
+
+		class Result
+		{
+		public:
+		};
+
+	};
 
 }
 
