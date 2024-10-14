@@ -24,6 +24,9 @@ struct Config
 	// value for command B
 	int m_value = 0;
 
+	// an additional, positional argument for command B
+	const _TCHAR* m_andArg = nullptr;
+
 	bool ParseCmdLine(int argc, const _TCHAR* const* argv);
 
 };
