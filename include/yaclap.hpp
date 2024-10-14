@@ -132,6 +132,8 @@ namespace yaclap
 	class Argument : public WithDesciption<CHAR>
 	{
 	public:
+		// TODO: Required flag
+
 		Argument() noexcept = default;
 		template<typename TSTR1, typename TSTR2>
 		explicit Argument(const TSTR1& name, const TSTR2& description)
@@ -293,6 +295,10 @@ namespace yaclap
 	class Parser : public WithCommandContainer<CHAR>, WithDesciption<CHAR>
 	{
 	public:
+		// TODO: Name (for documentation)
+		// Default ctor for edge case only -- remove?
+		// Load name automatically ?
+		// Skip description if not set (should not be)
 		Parser() noexcept = default;
 		template<typename TSTR>
 		Parser(const TSTR& description)
