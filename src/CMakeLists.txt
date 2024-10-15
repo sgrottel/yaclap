@@ -8,7 +8,7 @@ project ("yaclap")
 # Add source to this project's executable.
 add_executable (yaclap
 	"main.cpp"
-	"cmdargs.h"
+	"cmdargs.hpp"
 	"cmdargs.cpp"
 	"../include/yaclap.hpp"
 )
