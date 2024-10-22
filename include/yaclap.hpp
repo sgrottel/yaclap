@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -97,12 +98,11 @@ namespace yaclap
         }
 
     public:
-        std::vector<Alias<CHAR>>::const_iterator NameAliasBegin() const noexcept
+        inline std::vector<Alias<CHAR>>::const_iterator NameAliasBegin() const
         {
             return m_names.cbegin();
         }
-
-        std::vector<Alias<CHAR>>::const_iterator NameAliasEnd() const noexcept
+        inline std::vector<Alias<CHAR>>::const_iterator NameAliasEnd() const
         {
             return m_names.cend();
         }
@@ -247,7 +247,38 @@ namespace yaclap
         }
 
     public:
-        // TODO: Getters
+        inline std::vector<Command<CHAR>>::const_iterator CommandsBegin() const
+        {
+            return m_commands.cbegin();
+        }
+        inline std::vector<Command<CHAR>>::const_iterator CommandsEnd() const
+        {
+            return m_commands.cend();
+        }
+        inline std::vector<Option<CHAR>>::const_iterator OptionsBegin() const
+        {
+            return m_options.cbegin();
+        }
+        inline std::vector<Option<CHAR>>::const_iterator OptionsEnd() const
+        {
+            return m_options.cend();
+        }
+        inline std::vector<Switch<CHAR>>::const_iterator SwitchesBegin() const
+        {
+            return m_switches.cbegin();
+        }
+        inline std::vector<Switch<CHAR>>::const_iterator SwitchesEnd() const
+        {
+            return m_switches.cend();
+        }
+        inline std::vector<Argument<CHAR>>::const_iterator ArgumentsBegin() const
+        {
+            return m_arguments.cbegin();
+        }
+        inline std::vector<Argument<CHAR>>::const_iterator ArgumentsEnd() const
+        {
+            return m_arguments.cend();
+        }
 
     private:
         std::vector<Command<CHAR>> m_commands;
@@ -367,24 +398,123 @@ namespace yaclap
             return AddArgument(argument);
         }
 
+        inline void EnableImplicitHelpSwitch(bool enable = true) noexcept
+        {
+            m_withImplicitHelpSwitch = enable;
+        }
+        inline bool IsImplicitHelpSwitchEnabled() const noexcept
+        {
+            return m_withImplicitHelpSwitch;
+        }
+
+        /// <summary>
+        /// The parse result only identifies commands, options, switches, and arguments.
+        /// Use additional calls on this object to convert and assign values.
+        /// </summary>
         class Result
         {
-            friend class Parser<CHAR>;
-
         public:
+            /// <summary>
+            /// Returns true if this is the Result of a successful parsing,
+            /// i.e. no errors were encountered, and the implicit help switch was not triggered.
+            /// </summary>
+            inline bool IsSuccess() const noexcept
+            {
+                return m_success;
+            }
+
+            /// <summary>
+            /// Returns true if the help information should be shown after assigning all results
+            /// </summary>
+            inline bool ShouldShowHelp() const noexcept
+            {
+                return m_shouldShowHelp;
+            }
+
+            /// <summary>
+            /// Sets the error message to be shown to the user
+            /// </summary>
+            /// <param name="message">Use an ANSI/ASCII string, or a similar byte encoding,
+            /// which matches the encoding of the terminal your application is running in</param>
+            inline void SetError(const char* message, bool setUnsuccessful = true)
+            {
+                m_error = message;
+                if (setUnsuccessful)
+                {
+                    m_success = false;
+                    m_shouldShowHelp = true;
+                }
+            }
+
             // TODO: Implement
 
-        private:
+        protected:
             Result() = default;
+
+        private:
+            bool m_success = false;
+            bool m_shouldShowHelp = false;
+            std::string m_error{};
         };
 
-        Result Parse(int argc, const CHAR* const* argv, bool skipFirstArg = true)
+        /// <summary>
+        /// Parses the specified command line and returns the parse result
+        /// </summary>
+        Result Parse(int argc, const CHAR* const* argv, bool skipFirstArg = true) const;
+
+        /// <summary>
+        /// Prints a user-readable help text
+        /// </summary>
+        template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
+        void PrintHelp(WithCommandContainer<CHAR> const& command, std::basic_ostream<CHAR, TSTREAMT> const& stream = std::wcout) const
         {
             // TODO: Implement
 
-            return Result{};
+            std::cout << "NOT IMPLEMENTED\n";
         }
+
+        /// <summary>
+        /// Prints a user-readable help text based on this result
+        /// </summary>
+        template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
+        void PrintHelp(Result& result, std::basic_ostream<CHAR, TSTREAMT> const& stream = std::wcout) const
+        {
+            // TODO: Implement, specify deepest selected command
+            PrintHelp(*this);
+        }
+
+        /// <summary>
+        /// Prints a user-readable help text based on this result
+        /// </summary>
+        template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
+        void PrintHelp(std::basic_ostream<CHAR, TSTREAMT> const& stream = std::wcout) const
+        {
+            PrintHelp(*this);
+        }
+
+    private:
+        class ResultImpl : public Result
+        {
+        public:
+            ResultImpl() : Result()
+            {
+            }
+        };
+
+        bool m_withImplicitHelpSwitch = true;
     };
+
+    template <typename CHAR>
+    Parser<CHAR>::Result Parser<CHAR>::Parse(int argc, const CHAR* const* argv, bool skipFirstArg /* = true */) const
+    {
+        ResultImpl res{};
+
+        res.SetError("Not Implemented");
+
+        // TODO: Implement
+
+        return res;
+    }
 
 } // namespace yaclap
 

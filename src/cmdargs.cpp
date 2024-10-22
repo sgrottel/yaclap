@@ -59,7 +59,12 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
 
     Parser::Result res = parser.Parse(argc, argv);
 
-    // TODO: Implement
+    // TODO: Implement result mapping
 
-    return false;
+    if (res.ShouldShowHelp())
+    {
+        parser.PrintHelp(res);
+    }
+
+    return res.IsSuccess();
 }
