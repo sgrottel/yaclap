@@ -41,20 +41,15 @@ int main(int argc, char* argv[])
                 std::cout << "x";
                 break;
         }
-        std::cout
-            << cfg.m_verbose
-            << ((cfg.m_input != nullptr) ? "i" : "_")
-            << cfg.m_value
-            << ((cfg.m_andArg != nullptr) ? "a" : "_");
+        std::cout << cfg.m_verbose << ((cfg.m_input != nullptr) ? "i" : "_") << cfg.m_value
+                  << ((cfg.m_andArg != nullptr) ? "a" : "_");
         if (cfg.m_input != nullptr)
         {
-            std::wcout << L"\n"
-                       << cfg.m_input;
+            std::wcout << L"\n" << cfg.m_input;
         }
         if (cfg.m_andArg != nullptr)
         {
-            std::wcout << L"\n"
-                       << cfg.m_andArg;
+            std::wcout << L"\n" << cfg.m_andArg;
         }
         std::cout << std::endl;
     }

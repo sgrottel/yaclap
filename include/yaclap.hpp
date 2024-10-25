@@ -33,6 +33,7 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -547,6 +548,25 @@ namespace yaclap
                 }
             }
 
+            /// <summary>
+            /// Gets the set error message
+            /// </summary>
+            inline std::string const& GetError() const noexcept
+            {
+                return m_error;
+            }
+
+            /// <summary>
+            /// Prints to set error message to std out
+            /// </summary>
+            inline void PrintError(bool tryUseColor = true) const;
+
+            /// <summary>
+            /// Prints the error message to the specified stream
+            /// </summary>
+            template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
+            void PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, bool tryUseColor = true) const;
+
             // TODO: Implement
 
         protected:
@@ -623,6 +643,86 @@ namespace yaclap
 
         bool m_withImplicitHelpSwitch = true;
     };
+
+    template <>
+    void Parser<char>::Result::PrintError(bool tryUseColor) const
+    {
+        PrintError(std::cout, tryUseColor);
+    }
+
+    template <>
+    void Parser<wchar_t>::Result::PrintError(bool tryUseColor) const
+    {
+        PrintError(std::wcout, tryUseColor);
+    }
+
+    template <>
+    template <typename TSTREAMT>
+    void Parser<char>::Result::PrintError(std::basic_ostream<char, TSTREAMT>& stream, bool tryUseColor) const
+    {
+        if (Result::m_error.empty())
+            return;
+
+        bool useColor = false;
+#ifdef _WIN32
+        {
+            HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            DWORD mode;
+            if (GetConsoleMode(hStdOut, &mode))
+            {
+                SetConsoleMode(hStdOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+                if (GetConsoleMode(hStdOut, &mode))
+                {
+                    if (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+                    {
+                        useColor = true;
+                    }
+                }
+            }
+        }
+#endif
+        if (useColor)
+            stream << "\x1B[91m\x1B[40m";
+        stream << m_error;
+        if (useColor)
+            stream << "\x1B[0m";
+        stream << "\n";
+    }
+
+    template <>
+    template <typename TSTREAMT>
+    void Parser<wchar_t>::Result::PrintError(std::basic_ostream<wchar_t, TSTREAMT>& stream, bool tryUseColor) const
+    {
+        if (Result::m_error.empty())
+            return;
+        std::wstringstream wss;
+        wss << m_error.c_str();
+
+        bool useColor = false;
+#ifdef _WIN32
+        {
+            HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            DWORD mode;
+            if (GetConsoleMode(hStdOut, &mode))
+            {
+                SetConsoleMode(hStdOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+                if (GetConsoleMode(hStdOut, &mode))
+                {
+                    if (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+                    {
+                        useColor = true;
+                    }
+                }
+            }
+        }
+#endif
+        if (useColor)
+            stream << "\x1B[91m\x1B[40m";
+        stream << wss.str();
+        if (useColor)
+            stream << "\x1B[0m";
+        stream << L"\n";
+    }
 
     template <typename CHAR>
     template <typename TSTREAMT>
