@@ -4,8 +4,12 @@ IndentWidth: 4
 BreakBeforeBraces: Allman
 SortIncludes: true
 AccessModifierOffset: -4
-ColumnLimit: 0
+ColumnLimit: 120
 PointerAlignment: Left
 IndentCaseLabels: true
 MaxEmptyLinesToKeep: 3
 NamespaceIndentation: All
+AllowShortFunctionsOnASingleLine: None
+AlwaysBreakTemplateDeclarations: true
+PackConstructorInitializers: NextLineOnly
+SeparateDefinitionBlocks: Always
