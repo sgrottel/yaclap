@@ -78,12 +78,12 @@ namespace yaclap
         {
         }
 
-        const std::basic_string<CHAR>& GetName() const
+        const std::basic_string<CHAR>& GetName() const noexcept
         {
             return m_name;
         }
 
-        StringCompare GetStringCompareMode() const
+        StringCompare GetStringCompareMode() const noexcept
         {
             return m_stringCompare;
         }
@@ -536,8 +536,8 @@ namespace yaclap
             /// <summary>
             /// Sets the error message to be shown to the user
             /// </summary>
-            /// <param name="message">Use an ANSI/ASCII string, or a similar byte encoding,
-            /// which matches the encoding of the terminal your application is running in</param>
+            /// <param name="message">Use an 7-bit UTF-8 (recommended), ANSI/ASCII string, or a similar byte encoding,
+            /// which matches the encoding of the terminal your application is running in.</param>
             inline void SetError(const char* message, bool setUnsuccessful = true)
             {
                 m_error = message;
@@ -593,7 +593,7 @@ namespace yaclap
         /// Prints a user-readable help text
         /// </summary>
         template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
-        inline void PrintHelp(Result& result, std::basic_ostream<CHAR, TSTREAMT>& stream) const;
+        inline void PrintHelp(Result const& result, std::basic_ostream<CHAR, TSTREAMT>& stream) const;
 
         /// <summary>
         /// Prints a user-readable help text
@@ -609,7 +609,7 @@ namespace yaclap
         /// <summary>
         /// Prints a user-readable help text
         /// </summary>
-        inline void PrintHelp(Result& result) const;
+        inline void PrintHelp(Result const& result) const;
 
         /// <summary>
         /// Prints a user-readable help text
@@ -733,7 +733,7 @@ namespace yaclap
 
     template <typename CHAR>
     template <typename TSTREAMT>
-    void Parser<CHAR>::PrintHelp(Result& result, std::basic_ostream<CHAR, TSTREAMT>& stream) const
+    void Parser<CHAR>::PrintHelp(Result const& result, std::basic_ostream<CHAR, TSTREAMT>& stream) const
     {
         // TODO: select the deepest command
         PrintHelpImpl(nullptr, stream);
@@ -753,7 +753,7 @@ namespace yaclap
     }
 
     template <>
-    void Parser<char>::PrintHelp(Result& result) const
+    void Parser<char>::PrintHelp(Result const& result) const
     {
         PrintHelp(result, std::cout);
     }
@@ -771,7 +771,7 @@ namespace yaclap
     }
 
     template <>
-    void Parser<wchar_t>::PrintHelp(Result& result) const
+    void Parser<wchar_t>::PrintHelp(Result const& result) const
     {
         PrintHelp(result, std::wcout);
     }
@@ -939,7 +939,7 @@ namespace yaclap
             allSwitches.push_back(&helpSwitch);
         }
 
-        auto addRange = [](auto& vec, auto itBegin, auto itEnd)
+        auto const addRange = [](auto& vec, auto itBegin, auto itEnd)
         {
             for (auto optIt = itBegin; optIt != itEnd; ++optIt)
             {
@@ -1195,7 +1195,41 @@ namespace yaclap
     template <typename CHAR>
     Parser<CHAR>::Result Parser<CHAR>::Parse(int argc, const CHAR* const* argv, bool skipFirstArg /* = true */) const
     {
+        using s = StringConsts;
+
         ResultImpl res{};
+
+        std::vector<Command<CHAR> const*> allCommands;
+        std::vector<Option<CHAR> const*> allOptions;
+        std::vector<Switch<CHAR> const*> allSwitches;
+        std::vector<Argument<CHAR> const*> allArguments;
+        auto const addRange = [](auto& vec, auto itBegin, auto itEnd)
+        {
+            for (auto optIt = itBegin; optIt != itEnd; ++optIt)
+            {
+                vec.push_back(&*optIt);
+            }
+        };
+
+        Switch<CHAR> helpSwitch{s::helpName, s::helpDescription};
+        helpSwitch.AddAlias(s::helpAlias1).AddAlias(s::helpAlias2).AddAlias(s::helpAlias3).AddAlias(s::helpAlias4);
+        if (m_withImplicitHelpSwitch)
+        {
+            allSwitches.push_back(&helpSwitch);
+        }
+
+        addRange(allCommands, Parser<CHAR>::CommandsBegin(), Parser<CHAR>::CommandsEnd());
+        addRange(allOptions, Parser<CHAR>::OptionsBegin(), Parser<CHAR>::OptionsEnd());
+        addRange(allSwitches, Parser<CHAR>::SwitchesBegin(), Parser<CHAR>::SwitchesEnd());
+        addRange(allArguments, Parser<CHAR>::ArgumentsBegin(), Parser<CHAR>::ArgumentsEnd());
+
+        for (int argi = skipFirstArg ? 1 : 0; argi < argc; ++argi)
+        {
+            const std::basic_string_view<CHAR> arg{argv[argi]};
+
+            std::wcout << L"State maschine parsing arg " << argi << L": " << arg << L"\n";
+
+        }
 
         res.SetError("Not Implemented");
 
