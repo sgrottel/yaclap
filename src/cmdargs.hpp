@@ -1,6 +1,7 @@
 #pragma once
 
 #include <tchar.h>
+#include <string>
 
 enum class Command
 {
@@ -25,7 +26,7 @@ struct Config
     int m_value = 0;
 
     // an additional, positional argument for command B
-    const _TCHAR* m_andArg = nullptr;
+    std::basic_string<_TCHAR> m_andArg;
 
     bool ParseCmdLine(int argc, const _TCHAR* const* argv);
 };

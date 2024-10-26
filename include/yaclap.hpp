@@ -30,9 +30,13 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cctype>
+#include <cwctype>
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -88,10 +92,48 @@ namespace yaclap
             return m_stringCompare;
         }
 
+        template <typename T>
+        bool IsMatch(const std::basic_string_view<CHAR, T>& s) const
+        {
+            if (s.size() != m_name.size())
+                return false;
+
+            if (m_stringCompare == StringCompare::CaseInsensitive)
+            {
+                for (size_t i = 0; i < s.size(); ++i)
+                {
+                    if (!AreCharEqualCaseInsenstive(m_name[i], s[i]))
+                        return false;
+                }
+                return true;
+            }
+
+            for (size_t i = 0; i < s.size(); ++i)
+            {
+                if (m_name[i] != s[i])
+                    return false;
+            }
+            return true;
+        }
+
     private:
         std::basic_string<CHAR> m_name;
         StringCompare m_stringCompare;
+
+        static inline bool AreCharEqualCaseInsenstive(CHAR const& a, CHAR const& b);
     };
+
+    template<>
+    bool Alias<char>::AreCharEqualCaseInsenstive(char const& a, char const& b)
+    {
+        return std::tolower(a) == std::tolower(b);
+    }
+
+    template <>
+    bool Alias<wchar_t>::AreCharEqualCaseInsenstive(wchar_t const& a, wchar_t const& b)
+    {
+        return std::towlower(a) == std::towlower(b);
+    }
 
     template <typename CHAR>
     class WithNameAndAlias
@@ -123,6 +165,17 @@ namespace yaclap
         }
 
         std::basic_string<CHAR> GetAllNames() const;
+
+        template <typename T>
+        bool IsMatch(const std::basic_string_view<CHAR, T>& s) const
+        {
+            for (Alias<CHAR> const& a : m_names)
+            {
+                if (a.IsMatch(s))
+                    return true;
+            }
+            return false;
+        }
 
     private:
         std::vector<Alias<CHAR>> m_names;
@@ -268,6 +321,31 @@ namespace yaclap
         inline const std::basic_string<CHAR>& GetArgumentName() const noexcept
         {
             return m_argName;
+        }
+
+        template <typename T1, typename T2>
+        bool IsMatchWithValue(const std::basic_string_view<CHAR, T1>& s,
+                              std::basic_string_view<CHAR, T2>& outValueStr) const
+        {
+            for (typename std::vector<Alias<CHAR>>::const_iterator a = WithNameAndAlias<CHAR>::NameAliasBegin();
+                 a != WithNameAndAlias<CHAR>::NameAliasEnd(); ++a)
+            {
+                size_t nameLen = a->GetName().size();
+                if (nameLen >= s.size())
+                    return false;
+                // space char is part of the separated, in case option name and value were escaped together as one argument
+                if (s[nameLen] != ':' && s[nameLen] != ' ' && s[nameLen] != '=')
+                    return false;
+                std::basic_string_view<CHAR> sub{s.data(), nameLen};
+
+                if (a->IsMatch(sub))
+                {
+                    outValueStr = std::basic_string_view<CHAR>{s.data() + nameLen + 1, s.size() - nameLen - 1};
+                    return true;
+                }
+            }
+
+            return false;
         }
 
     private:
@@ -509,6 +587,16 @@ namespace yaclap
             return m_withImplicitHelpSwitch;
         }
 
+        inline void SetErrorOnUnmatchedArguments(bool setError = true) noexcept
+        {
+            m_errorOnUnmatchedArguments = setError;
+        }
+
+        inline bool IsSetErrorOnUnmatchedArguments() const noexcept
+        {
+            return m_errorOnUnmatchedArguments;
+        }
+
         /// <summary>
         /// The parse result only identifies commands, options, switches, and arguments.
         /// Use additional calls on this object to convert and assign values.
@@ -516,6 +604,9 @@ namespace yaclap
         class Result
         {
         public:
+            using string_t = std::basic_string<CHAR>;
+            using string_view_t = std::basic_string_view<CHAR>;
+
             /// <summary>
             /// Returns true if this is the Result of a successful parsing,
             /// i.e. no errors were encountered, and the implicit help switch was not triggered.
@@ -536,9 +627,7 @@ namespace yaclap
             /// <summary>
             /// Sets the error message to be shown to the user
             /// </summary>
-            /// <param name="message">Use an 7-bit UTF-8 (recommended), ANSI/ASCII string, or a similar byte encoding,
-            /// which matches the encoding of the terminal your application is running in.</param>
-            inline void SetError(const char* message, bool setUnsuccessful = true)
+            inline void SetError(const CHAR* message, bool setUnsuccessful = true)
             {
                 m_error = message;
                 if (setUnsuccessful)
@@ -549,9 +638,17 @@ namespace yaclap
             }
 
             /// <summary>
+            /// Sets the error message to be shown to the user
+            /// </summary>
+            inline void SetError(const string_t& message, bool setUnsuccessful = true)
+            {
+                SetError(message.c_str(), setUnsuccessful);
+            }
+
+            /// <summary>
             /// Gets the set error message
             /// </summary>
-            inline std::string const& GetError() const noexcept
+            inline string_t const& GetError() const noexcept
             {
                 return m_error;
             }
@@ -567,15 +664,121 @@ namespace yaclap
             template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
             void PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, bool tryUseColor = true) const;
 
-            // TODO: Implement
+            inline std::vector<WithIdentity<CHAR>> const& Commands() const noexcept
+            {
+                return m_commands;
+            }
+
+            inline bool HasCommand(Command<CHAR> const& cmd) const noexcept
+            {
+                for (auto const& cmdId : m_commands)
+                {
+                    if (WithIdentity<CHAR>::Equals(cmdId, cmd))
+                        return true;
+                }
+                return false;
+            }
+
+            inline std::vector<std::tuple<WithIdentity<CHAR>, string_view_t>> const& Options() const noexcept
+            {
+                return m_options;
+            }
+
+            // TODO: Implement getting options
+
+            inline std::vector<WithIdentity<CHAR>> const& Switches() const noexcept
+            {
+                return m_switches;
+            }
+
+            /// <summary>
+            /// Returns the number of times the specified switch `swt` was seen in the command line (0 = never).
+            /// </summary>
+            inline size_t HasSwitch(Switch<CHAR> const& swt) const
+            {
+                return std::count_if(m_switches.cbegin(), m_switches.cend(),
+                                     [&swt](WithIdentity<CHAR> const& s)
+                                     { return WithIdentity<CHAR>::Equals(s, swt); });
+            }
+
+            inline std::vector<std::tuple<WithIdentity<CHAR>, string_view_t>> const& MatchedArguments() const noexcept
+            {
+                return m_matchedArguments;
+            }
+
+            inline std::optional<string_view_t> GetArgument(Argument<CHAR> const& arg) const
+            {
+                for (auto const& matched : m_matchedArguments)
+                {
+                    if (WithIdentity<CHAR>::Equals(std::get<0>(matched), arg))
+                    {
+                        return std::get<1>(matched);
+                    }
+                }
+                return std::nullopt;
+            }
+
+            inline std::vector<string_view_t> const& UnmatchedArguments() const noexcept
+            {
+                return m_unmatchedArguments;
+            }
+
+            inline bool HasUnmatchedArguments() const
+            {
+                return !m_unmatchedArguments.empty();
+            }
 
         protected:
             Result() = default;
 
+            inline void AddCommand(Command<CHAR> const& cmd)
+            {
+                m_commands.push_back(cmd);
+            }
+
+            template<typename T>
+            inline void AddOption(Option<CHAR> const& opt, std::basic_string_view<CHAR, T> const& valueStr)
+            {
+                m_options.push_back({opt, valueStr});
+            }
+
+            inline void AddSwitch(Switch<CHAR> const& swt)
+            {
+                m_switches.push_back(swt);
+            }
+
+            template <typename T>
+            inline void AddMatchedArgument(Argument<CHAR> const& arg, std::basic_string_view<CHAR, T> const& valueStr)
+            {
+                m_matchedArguments.push_back({arg, valueStr});
+            }
+
+            template <typename T>
+            inline void AddUnmatchedArgument(std::basic_string_view<CHAR, T> const& str)
+            {
+                m_unmatchedArguments.push_back(str);
+            }
+
+            inline void SetShouldShowHelp()
+            {
+                m_shouldShowHelp = true;
+            }
+
+            inline void SetSuccess()
+            {
+                m_success = true;
+            }
+
         private:
             bool m_success = false;
             bool m_shouldShowHelp = false;
-            std::string m_error{};
+            string_t m_error{};
+
+            std::vector<WithIdentity<CHAR>> m_commands;
+            std::vector<std::tuple<WithIdentity<CHAR>, string_view_t>> m_options;
+            std::vector<WithIdentity<CHAR>> m_switches;
+            std::vector<std::tuple<WithIdentity<CHAR>, string_view_t>> m_matchedArguments;
+            std::vector<string_view_t> m_unmatchedArguments;
         };
 
         /// <summary>
@@ -639,9 +842,18 @@ namespace yaclap
                 : Result()
             {
             }
+
+            using Result::AddCommand;
+            using Result::AddOption;
+            using Result::AddSwitch;
+            using Result::AddMatchedArgument;
+            using Result::AddUnmatchedArgument;
+            using Result::SetShouldShowHelp;
+            using Result::SetSuccess;
         };
 
         bool m_withImplicitHelpSwitch = true;
+        bool m_errorOnUnmatchedArguments = true;
     };
 
     template <>
@@ -656,9 +868,9 @@ namespace yaclap
         PrintError(std::wcout, tryUseColor);
     }
 
-    template <>
+    template <typename CHAR>
     template <typename TSTREAMT>
-    void Parser<char>::Result::PrintError(std::basic_ostream<char, TSTREAMT>& stream, bool tryUseColor) const
+    void Parser<CHAR>::Result::PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, bool tryUseColor) const
     {
         if (Result::m_error.empty())
             return;
@@ -689,41 +901,6 @@ namespace yaclap
         stream << "\n";
     }
 
-    template <>
-    template <typename TSTREAMT>
-    void Parser<wchar_t>::Result::PrintError(std::basic_ostream<wchar_t, TSTREAMT>& stream, bool tryUseColor) const
-    {
-        if (Result::m_error.empty())
-            return;
-        std::wstringstream wss;
-        wss << m_error.c_str();
-
-        bool useColor = false;
-#ifdef _WIN32
-        {
-            HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-            DWORD mode;
-            if (GetConsoleMode(hStdOut, &mode))
-            {
-                SetConsoleMode(hStdOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-                if (GetConsoleMode(hStdOut, &mode))
-                {
-                    if (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING)
-                    {
-                        useColor = true;
-                    }
-                }
-            }
-        }
-#endif
-        if (useColor)
-            stream << "\x1B[91m\x1B[40m";
-        stream << wss.str();
-        if (useColor)
-            stream << "\x1B[0m";
-        stream << L"\n";
-    }
-
     template <typename CHAR>
     template <typename TSTREAMT>
     void Parser<CHAR>::PrintHelp(Command<CHAR> const& command, std::basic_ostream<CHAR, TSTREAMT>& stream) const
@@ -735,8 +912,21 @@ namespace yaclap
     template <typename TSTREAMT>
     void Parser<CHAR>::PrintHelp(Result const& result, std::basic_ostream<CHAR, TSTREAMT>& stream) const
     {
-        // TODO: select the deepest command
-        PrintHelpImpl(nullptr, stream);
+        Command<CHAR> const* cmd = nullptr;
+        if (!result.Commands().empty())
+        {
+            WithIdentity<CHAR> cmdId = result.Commands().back();
+            for (auto cmdIt = WithCommandContainer<CHAR>::CommandsBegin();
+                 cmdIt != WithCommandContainer<CHAR>::CommandsEnd(); ++cmdIt)
+            {
+                if (WithIdentity<CHAR>::Equals(*cmdIt, cmdId))
+                {
+                    cmd = &*cmdIt;
+                    break;
+                }
+            }
+        }
+        PrintHelpImpl(cmd, stream);
     }
 
     template <typename CHAR>
@@ -807,6 +997,20 @@ namespace yaclap
         static constexpr char const* helpAlias3 = "-?";
         static constexpr char const* helpAlias4 = "/?";
         static constexpr char const* helpDescription = "Show help and usage information";
+
+        static constexpr char const* errorOptionNoValue = "Value of option expected, but no more arguments: ";
+        static constexpr char const* errorUnmatchedArguments = "Unmatched arguments present in command line";
+        static constexpr char const* errorRequiredArgumentMissing = "Required argument missing: ";
+
+        static inline bool isspace(char c)
+        {
+            return std::isspace(c);
+        }
+
+        static inline char cast(char c)
+        {
+            return c;
+        }
     };
 
     template <>
@@ -834,6 +1038,20 @@ namespace yaclap
         static constexpr wchar_t const* helpAlias3 = L"-?";
         static constexpr wchar_t const* helpAlias4 = L"/?";
         static constexpr wchar_t const* helpDescription = L"Show help and usage information";
+
+        static constexpr wchar_t const* errorOptionNoValue = L"Value of option expected, but no more arguments: ";
+        static constexpr wchar_t const* errorUnmatchedArguments = L"Unmatched arguments present in command line";
+        static constexpr wchar_t const* errorRequiredArgumentMissing = L"Required argument missing: ";
+
+        static inline bool isspace(wchar_t c)
+        {
+            return std::iswspace(c);
+        }
+
+        static inline char cast(wchar_t c)
+        {
+            return (static_cast<int>(c) <= 127) ? static_cast<char>(c) : '?';
+        }
     };
 
     template <typename CHAR>
@@ -932,13 +1150,6 @@ namespace yaclap
         std::vector<Switch<CHAR> const*> allSwitches;
         std::vector<Argument<CHAR> const*> allArguments;
 
-        Switch<CHAR> helpSwitch{s::helpName, s::helpDescription};
-        helpSwitch.AddAlias(s::helpAlias1).AddAlias(s::helpAlias2).AddAlias(s::helpAlias3).AddAlias(s::helpAlias4);
-        if (m_withImplicitHelpSwitch)
-        {
-            allSwitches.push_back(&helpSwitch);
-        }
-
         auto const addRange = [](auto& vec, auto itBegin, auto itEnd)
         {
             for (auto optIt = itBegin; optIt != itEnd; ++optIt)
@@ -954,6 +1165,13 @@ namespace yaclap
             addRange(allOptions, c->OptionsBegin(), c->OptionsEnd());
             addRange(allSwitches, c->SwitchesBegin(), c->SwitchesEnd());
             addRange(allArguments, c->ArgumentsBegin(), c->ArgumentsEnd());
+        }
+
+        Switch<CHAR> helpSwitch{s::helpName, s::helpDescription};
+        helpSwitch.AddAlias(s::helpAlias1).AddAlias(s::helpAlias2).AddAlias(s::helpAlias3).AddAlias(s::helpAlias4);
+        if (m_withImplicitHelpSwitch)
+        {
+            allSwitches.push_back(&helpSwitch);
         }
 
         size_t x = 0;
@@ -1047,7 +1265,7 @@ namespace yaclap
                             bool found = false;
                             for (typename string::const_iterator it = nameBegin + c1w; it != nameBegin; --it)
                             {
-                                if (std::isspace(*it))
+                                if (s::isspace(*it))
                                 {
                                     nameNext = it;
                                     found = true;
@@ -1059,7 +1277,7 @@ namespace yaclap
                             {
                                 for (typename string::const_iterator it = nameBegin + maxc1w; it != nameBegin; --it)
                                 {
-                                    if (std::isspace(*it))
+                                    if (s::isspace(*it))
                                     {
                                         nameNext = it;
                                         found = true;
@@ -1075,13 +1293,28 @@ namespace yaclap
                         }
                         // else, name is only slightly too large. Do hanging text without wrap
                     }
+                    for (typename string::const_iterator it = nameBegin; it != nameNext; ++it)
+                    {
+                        if (*it == s::nl)
+                        {
+                            nameNext = it;
+                            break;
+                        }
+                    }
 
                     nameLines.push_back(
                         std::basic_string_view<CHAR>{&*nameBegin, static_cast<size_t>(nameNext - nameBegin)});
 
-                    while (nameNext != nameEnd && std::isspace(*nameNext))
+                    if (nameNext != nameEnd && *nameNext == s::nl)
                     {
                         nameNext++;
+                    }
+                    else
+                    {
+                        while (nameNext != nameEnd && std::isspace(*nameNext))
+                        {
+                            nameNext++;
+                        }
                     }
                     nameBegin = nameNext;
                 }
@@ -1165,7 +1398,8 @@ namespace yaclap
             docu.clear();
             for (Option<CHAR> const* opt : allOptions)
             {
-                docu.push_back({opt->GetAllNames(), opt->GetDescription()});
+                docu.push_back(
+                    {opt->GetAllNames() + s::nl + s::s + s::s + s::ob + opt->GetArgumentName() + s::cb, opt->GetDescription()});
             }
             for (Switch<CHAR> const* sw : allSwitches)
             {
@@ -1223,17 +1457,121 @@ namespace yaclap
         addRange(allSwitches, Parser<CHAR>::SwitchesBegin(), Parser<CHAR>::SwitchesEnd());
         addRange(allArguments, Parser<CHAR>::ArgumentsBegin(), Parser<CHAR>::ArgumentsEnd());
 
+        Option<CHAR> const* pendingOption = nullptr;
+
         for (int argi = skipFirstArg ? 1 : 0; argi < argc; ++argi)
         {
             const std::basic_string_view<CHAR> arg{argv[argi]};
+            bool handled = false;
 
-            std::wcout << L"State maschine parsing arg " << argi << L": " << arg << L"\n";
+            if (pendingOption != nullptr)
+            {
+                res.AddOption(*pendingOption, arg);
+                handled = true;
+                pendingOption = nullptr;
+            }
+            if (handled)
+                continue;
 
+            for (Command<CHAR> const* cmd : allCommands)
+            {
+                if (cmd->IsMatch(arg))
+                {
+                    allCommands.clear();
+                    addRange(allCommands, cmd->CommandsBegin(), cmd->CommandsEnd());
+
+                    addRange(allOptions, cmd->OptionsBegin(), cmd->OptionsEnd());
+                    addRange(allSwitches, cmd->SwitchesBegin(), cmd->SwitchesEnd());
+                    addRange(allArguments, cmd->ArgumentsBegin(), cmd->ArgumentsEnd());
+
+                    res.AddCommand(*cmd);
+                    handled = true;
+                    break;
+                }
+            }
+            if (handled)
+                continue;
+
+            for (Option<CHAR> const* opt : allOptions)
+            {
+                if (opt->IsMatch(arg))
+                {
+                    pendingOption = opt;
+                    handled = true;
+                    break;
+                }
+                std::basic_string_view<CHAR> valueStr;
+                if (opt->IsMatchWithValue(arg, valueStr))
+                {
+                    handled = true;
+                    res.AddOption(*opt, valueStr);
+                    break;
+                }
+            }
+            if (handled)
+                continue;
+            for (Switch<CHAR> const* swt : allSwitches)
+            {
+                if (swt->IsMatch(arg))
+                {
+                    handled = true;
+                    if (WithIdentity<CHAR>::Equals(*swt, helpSwitch))
+                    {
+                        res.SetShouldShowHelp();
+                    }
+                    else
+                    {
+                        res.AddSwitch(*swt);
+                    }
+                    break;
+                }
+            }
+            if (handled)
+                continue;
+
+            if (!allArguments.empty())
+            {
+                Argument<CHAR> const* ma = allArguments.front();
+                res.AddMatchedArgument(*ma, arg);
+                handled = true;
+                allArguments.erase(allArguments.begin());
+            }
+            if (handled)
+                continue;
+
+            res.AddUnmatchedArgument(arg);
         }
 
-        res.SetError("Not Implemented");
+        Argument<CHAR> const* missingRequiredArgument = nullptr;
+        for (Argument<CHAR> const* ma : allArguments)
+        {
+            if (ma->IsRequired())
+            {
+                missingRequiredArgument = ma;
+                break;
+            }
+        }
 
-        // TODO: Implement
+        if (pendingOption != nullptr)
+        {
+            std::basic_string<CHAR> msg{s::errorOptionNoValue};
+            msg += pendingOption->NameAliasBegin()->GetName();
+            res.SetError(msg);
+        }
+        else if (m_errorOnUnmatchedArguments && res.HasUnmatchedArguments())
+        {
+            res.SetError(s::errorUnmatchedArguments);
+        }
+        else if (missingRequiredArgument != nullptr)
+        {
+            std::basic_string<CHAR> msg{s::errorRequiredArgumentMissing};
+            msg += missingRequiredArgument->GetName();
+            res.SetError(msg);
+        }
+        else
+        {
+            res.SetSuccess();
+        }
 
         return res;
     }

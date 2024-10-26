@@ -77,7 +77,39 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
 
     Parser::Result res = parser.Parse(argc, argv);
 
-    // TODO: Implement result mapping
+    // mapping parsed command line options to application specific struct:
+
+    // Commands
+    if (res.HasCommand(commandA))
+        m_cmd = ::Command::CommandA;
+    else if (res.HasCommand(commandB))
+        m_cmd = ::Command::CommandB;
+
+    // Options
+
+    // TODO: Implement result mapping inputOption
+
+    // TODO: Implement result mapping valueOption
+
+    // Switch
+    //  which can be specified multiple times:
+    m_verbose = static_cast<int>(res.HasSwitch(verboseSwitch));
+
+    // Arguments
+    //  the typical case:
+    auto andValue = res.GetArgument(andArgument);
+    if (andValue)
+        m_andArg = andValue.value();
+
+    //  the special case, with some value computation code:
+    auto orValue = res.GetArgument(orArgument);
+    if (orValue)
+    {
+        if (!m_andArg.empty())
+            m_andArg += _T(" ");
+        m_andArg += _T("| ");
+        m_andArg += orValue.value();
+    }
 
     if (res.ShouldShowHelp())
     {
