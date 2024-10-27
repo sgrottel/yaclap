@@ -123,7 +123,7 @@ namespace yaclap
         static inline bool AreCharEqualCaseInsenstive(CHAR const& a, CHAR const& b);
     };
 
-    template<>
+    template <>
     bool Alias<char>::AreCharEqualCaseInsenstive(char const& a, char const& b)
     {
         return std::tolower(a) == std::tolower(b);
@@ -333,7 +333,8 @@ namespace yaclap
                 size_t nameLen = a->GetName().size();
                 if (nameLen >= s.size())
                     return false;
-                // space char is part of the separated, in case option name and value were escaped together as one argument
+                // space char is part of the separated, in case option name and value were escaped together as one
+                // argument
                 if (s[nameLen] != ':' && s[nameLen] != ' ' && s[nameLen] != '=')
                     return false;
                 std::basic_string_view<CHAR> sub{s.data(), nameLen};
@@ -664,11 +665,17 @@ namespace yaclap
             template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
             void PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, bool tryUseColor = true) const;
 
+            /// <summary>
+            /// Returns all Commands occured in the command line in order in which they appeared.
+            /// </summary>
             inline std::vector<WithIdentity<CHAR>> const& Commands() const noexcept
             {
                 return m_commands;
             }
 
+            /// <summary>
+            /// Returns true if the specified Command `cmd` occured in the command line.
+            /// </summary>
             inline bool HasCommand(Command<CHAR> const& cmd) const noexcept
             {
                 for (auto const& cmdId : m_commands)
@@ -679,13 +686,79 @@ namespace yaclap
                 return false;
             }
 
+            /// <summary>
+            /// Returns all Options occured in the command line in order in which they appeared.
+            /// </summary>
             inline std::vector<std::tuple<WithIdentity<CHAR>, string_view_t>> const& Options() const noexcept
             {
                 return m_options;
             }
 
-            // TODO: Implement getting options
+            /// <summary>
+            /// Returns the number of times the specified option `opt` was seen in the command line (0 = never).
+            /// </summary>
+            inline size_t GetOptionCount(Option<CHAR> const& opt) const
+            {
+                return std::count_if(m_options.cbegin(), m_options.cend(),
+                                     [&opt](std::tuple<WithIdentity<CHAR>, string_view_t> const& o)
+                                     { return WithIdentity<CHAR>::Equals(std::get<0>(o), opt); });
+            }
 
+            /// <summary>
+            /// Returns the value of the _first_ occurance of the specified Option `opt` in the command line.
+            /// </summary>
+            inline std::optional<string_view_t> GetOptionValue(Option<CHAR> const& opt) const
+            {
+                for (std::tuple<WithIdentity<CHAR>, string_view_t> const& o : m_options)
+                {
+                    if (WithIdentity<CHAR>::Equals(std::get<0>(o), opt))
+                    {
+                        return std::get<1>(o);
+                    }
+                }
+                return std::nullopt;
+            }
+
+            /// <summary>
+            /// Alias for 'true', useful as human-readable value for the second parameter of `GetOptionValue`
+            /// </summary>
+            static constexpr bool ErrorIfMultiple = true;
+
+            /// <summary>
+            /// Returns the value of the _first_ occurance of the specified Option `opt` in the command line.
+            /// If `setErrorIfMultiple` is set to `ErrorIfMultiple` or `true`, and the Option was found more than one
+            /// time in the command line, then an error message is set in the result object, and `nullopt` is returned.
+            /// </summary>
+            inline std::optional<string_view_t> GetOptionValue(Option<CHAR> const& opt, bool setErrorIfMultiple)
+            {
+                if (GetOptionCount(opt) > 1)
+                {
+                    SetError(string_t{StringConsts::errorOptionSpecifiedMultipletimes} +
+                             opt.NameAliasBegin()->GetName());
+                    return std::nullopt;
+                }
+                return GetOptionValue(opt);
+            }
+
+            /// <summary>
+            /// Returns all values of all occurances of the specified Option `opt` in the command line.
+            /// </summary>
+            inline std::vector<string_view_t> GetOptionValues(Option<CHAR> const& opt) const
+            {
+                std::vector<string_view_t> result;
+                for (std::tuple<WithIdentity<CHAR>, string_view_t> const& o : m_options)
+                {
+                    if (WithIdentity<CHAR>::Equals(std::get<0>(o), opt))
+                    {
+                        result.push_back(std::get<1>(o));
+                    }
+                }
+                return result;
+            }
+
+            /// <summary>
+            /// Returns all Switches occured in the command line in the order in which they appeared
+            /// </summary>
             inline std::vector<WithIdentity<CHAR>> const& Switches() const noexcept
             {
                 return m_switches;
@@ -701,11 +774,17 @@ namespace yaclap
                                      { return WithIdentity<CHAR>::Equals(s, swt); });
             }
 
+            /// <summary>
+            /// Returns all matched Arguments occured in the command line in the order in which they appeared
+            /// </summary>
             inline std::vector<std::tuple<WithIdentity<CHAR>, string_view_t>> const& MatchedArguments() const noexcept
             {
                 return m_matchedArguments;
             }
 
+            /// <summary>
+            /// Gets the value of the specified Argument `arg`
+            /// </summary>
             inline std::optional<string_view_t> GetArgument(Argument<CHAR> const& arg) const
             {
                 for (auto const& matched : m_matchedArguments)
@@ -718,11 +797,17 @@ namespace yaclap
                 return std::nullopt;
             }
 
+            /// <summary>
+            /// Returns all unmatched arguments from the command line.
+            /// </summary>
             inline std::vector<string_view_t> const& UnmatchedArguments() const noexcept
             {
                 return m_unmatchedArguments;
             }
 
+            /// <summary>
+            /// Returns true if there is at least one unmatched argument.
+            /// </summary>
             inline bool HasUnmatchedArguments() const
             {
                 return !m_unmatchedArguments.empty();
@@ -736,7 +821,7 @@ namespace yaclap
                 m_commands.push_back(cmd);
             }
 
-            template<typename T>
+            template <typename T>
             inline void AddOption(Option<CHAR> const& opt, std::basic_string_view<CHAR, T> const& valueStr)
             {
                 m_options.push_back({opt, valueStr});
@@ -819,6 +904,21 @@ namespace yaclap
         /// </summary>
         inline void PrintHelp() const;
 
+        /// <summary>
+        /// If `result.IsSuccess() == false` prints the error message.
+        /// If `result.ShouldShowHelp() == true` prints the usage information.
+        /// Both info is printed to `stdout`.
+        /// </summary>
+        inline void PrintErrorAndHelpIfNeeded(Result const& result) const;
+
+        /// <summary>
+        /// If `result.IsSuccess() == false` prints the error message.
+        /// If `result.ShouldShowHelp() == true` prints the usage information.
+        /// Both info is printed to the specified `stream`.
+        /// </summary>
+        template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
+        inline void PrintErrorAndHelpIfNeeded(Result const& result, std::basic_ostream<CHAR, TSTREAMT>& stream) const;
+
     private:
         struct StringConsts;
 
@@ -844,9 +944,9 @@ namespace yaclap
             }
 
             using Result::AddCommand;
+            using Result::AddMatchedArgument;
             using Result::AddOption;
             using Result::AddSwitch;
-            using Result::AddMatchedArgument;
             using Result::AddUnmatchedArgument;
             using Result::SetShouldShowHelp;
             using Result::SetSuccess;
@@ -1001,6 +1101,8 @@ namespace yaclap
         static constexpr char const* errorOptionNoValue = "Value of option expected, but no more arguments: ";
         static constexpr char const* errorUnmatchedArguments = "Unmatched arguments present in command line";
         static constexpr char const* errorRequiredArgumentMissing = "Required argument missing: ";
+        static constexpr char const* errorOptionSpecifiedMultipletimes =
+            "Option was specified multiple times in the command line: ";
 
         static inline bool isspace(char c)
         {
@@ -1042,6 +1144,8 @@ namespace yaclap
         static constexpr wchar_t const* errorOptionNoValue = L"Value of option expected, but no more arguments: ";
         static constexpr wchar_t const* errorUnmatchedArguments = L"Unmatched arguments present in command line";
         static constexpr wchar_t const* errorRequiredArgumentMissing = L"Required argument missing: ";
+        static constexpr wchar_t const* errorOptionSpecifiedMultipletimes =
+            L"Option was specified multiple times in the command line: ";
 
         static inline bool isspace(wchar_t c)
         {
@@ -1078,20 +1182,24 @@ namespace yaclap
         using string = std::basic_string<CHAR>;
         using stringPair = std::tuple<string, string>;
 
-        int width = 80;
+        size_t width = 80;
 #ifdef _WIN32
         CONSOLE_SCREEN_BUFFER_INFO csbi;
         if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi))
         {
-            width = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+            width = static_cast<size_t>(csbi.srWindow.Right - csbi.srWindow.Left + 1);
         }
 #else
         struct winsize w;
         if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0)
         {
-            width = w.ws_col;
+            width = static_cast<size_t>(w.ws_col);
         }
 #endif
+        if (width < 30)
+        {
+            width = 30;
+        }
         width--; // reserve last column to host an explicit new line
 
         WithDesciption<CHAR> const* desc = (command == nullptr) ? static_cast<WithDesciption<CHAR> const*>(this)
@@ -1398,8 +1506,8 @@ namespace yaclap
             docu.clear();
             for (Option<CHAR> const* opt : allOptions)
             {
-                docu.push_back(
-                    {opt->GetAllNames() + s::nl + s::s + s::s + s::ob + opt->GetArgumentName() + s::cb, opt->GetDescription()});
+                docu.push_back({opt->GetAllNames() + s::nl + s::s + s::s + s::ob + opt->GetArgumentName() + s::cb,
+                                opt->GetDescription()});
             }
             for (Switch<CHAR> const* sw : allSwitches)
             {
@@ -1574,6 +1682,33 @@ namespace yaclap
         }
 
         return res;
+    }
+
+    template <>
+    void Parser<char>::PrintErrorAndHelpIfNeeded(Result const& result) const
+    {
+        Parser<char>::PrintErrorAndHelpIfNeeded(result, std::cout);
+    }
+
+    template <>
+    void Parser<wchar_t>::PrintErrorAndHelpIfNeeded(Result const& result) const
+    {
+        Parser<wchar_t>::PrintErrorAndHelpIfNeeded(result, std::wcout);
+    }
+
+    template <typename CHAR>
+    template <typename TSTREAMT>
+    void Parser<CHAR>::PrintErrorAndHelpIfNeeded(Result const& result, std::basic_ostream<CHAR, TSTREAMT>& stream) const
+    {
+        if (!result.IsSuccess())
+        {
+            result.PrintError();
+            stream << StringConsts::nl;
+        }
+        if (result.ShouldShowHelp())
+        {
+            Parser<CHAR>::PrintHelp(result);
+        }
     }
 
 } // namespace yaclap
