@@ -1,6 +1,11 @@
 #pragma once
 
+#ifdef _WIN32
 #include <tchar.h>
+#else
+#define _TCHAR char
+#define _T(A) A
+#endif
 #include <string>
 
 enum class Command

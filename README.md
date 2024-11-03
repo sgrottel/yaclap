@@ -1,6 +1,7 @@
 # yaclap
 Yet Another Command Line Argument Parser, for c++, as ___single-header-only___ library, ___natively supporting `wchar_t`___, with a ___minimal feature set___, e.g. without type conversion and validation, just because...
 
+[![Build and Test](https://github.com/sgrottel/yaclap/actions/workflows/build-and-test.yaml/badge.svg?branch=main)](https://github.com/sgrottel/yaclap/actions/workflows/build-and-test.yaml)
 [![GitHub](https://img.shields.io/github/license/sgrottel/yaclap)](./LICENSE)
 
 

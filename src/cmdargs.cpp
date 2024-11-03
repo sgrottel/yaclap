@@ -127,8 +127,15 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
     m_value = 0;
     for (std::basic_string_view<_TCHAR> const& s : res.GetOptionValues(valueOption))
     {
+#ifdef _WIN32
         _TCHAR* end = nullptr;
         long v = _tcstol(s.data(), &end, 10);
+#else
+        size_t endPos = 0;
+        long v = std::stol(s.data(), &endPos, 10);
+        const _TCHAR* end = s.data() + endPos;
+#endif
+           
         if (v == 0)
         {
             // might be the value zero, or an indication that the conversion failed

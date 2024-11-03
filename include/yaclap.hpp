@@ -154,12 +154,12 @@ namespace yaclap
         }
 
     public:
-        inline std::vector<Alias<CHAR>>::const_iterator NameAliasBegin() const
+        inline typename std::vector<Alias<CHAR>>::const_iterator NameAliasBegin() const
         {
             return m_names.cbegin();
         }
 
-        inline std::vector<Alias<CHAR>>::const_iterator NameAliasEnd() const
+        inline typename std::vector<Alias<CHAR>>::const_iterator NameAliasEnd() const
         {
             return m_names.cend();
         }
@@ -403,42 +403,42 @@ namespace yaclap
         }
 
     public:
-        inline std::vector<Command<CHAR>>::const_iterator CommandsBegin() const
+        inline typename std::vector<Command<CHAR>>::const_iterator CommandsBegin() const
         {
             return m_commands.cbegin();
         }
 
-        inline std::vector<Command<CHAR>>::const_iterator CommandsEnd() const
+        inline typename std::vector<Command<CHAR>>::const_iterator CommandsEnd() const
         {
             return m_commands.cend();
         }
 
-        inline std::vector<Option<CHAR>>::const_iterator OptionsBegin() const
+        inline typename std::vector<Option<CHAR>>::const_iterator OptionsBegin() const
         {
             return m_options.cbegin();
         }
 
-        inline std::vector<Option<CHAR>>::const_iterator OptionsEnd() const
+        inline typename std::vector<Option<CHAR>>::const_iterator OptionsEnd() const
         {
             return m_options.cend();
         }
 
-        inline std::vector<Switch<CHAR>>::const_iterator SwitchesBegin() const
+        inline typename std::vector<Switch<CHAR>>::const_iterator SwitchesBegin() const
         {
             return m_switches.cbegin();
         }
 
-        inline std::vector<Switch<CHAR>>::const_iterator SwitchesEnd() const
+        inline typename std::vector<Switch<CHAR>>::const_iterator SwitchesEnd() const
         {
             return m_switches.cend();
         }
 
-        inline std::vector<Argument<CHAR>>::const_iterator ArgumentsBegin() const
+        inline typename std::vector<Argument<CHAR>>::const_iterator ArgumentsBegin() const
         {
             return m_arguments.cbegin();
         }
 
-        inline std::vector<Argument<CHAR>>::const_iterator ArgumentsEnd() const
+        inline typename std::vector<Argument<CHAR>>::const_iterator ArgumentsEnd() const
         {
             return m_arguments.cend();
         }
@@ -662,7 +662,7 @@ namespace yaclap
             /// <summary>
             /// Prints the error message to the specified stream
             /// </summary>
-            template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
+            template <typename TSTREAMT = typename std::basic_ostream<CHAR>::traits_type>
             void PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, bool tryUseColor = true) const;
 
             /// <summary>
@@ -874,19 +874,19 @@ namespace yaclap
         /// <summary>
         /// Prints a user-readable help text
         /// </summary>
-        template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
+        template <typename TSTREAMT = typename std::basic_ostream<CHAR>::traits_type>
         inline void PrintHelp(Command<CHAR> const& command, std::basic_ostream<CHAR, TSTREAMT>& stream) const;
 
         /// <summary>
         /// Prints a user-readable help text
         /// </summary>
-        template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
+        template <typename TSTREAMT = typename std::basic_ostream<CHAR>::traits_type>
         inline void PrintHelp(Result const& result, std::basic_ostream<CHAR, TSTREAMT>& stream) const;
 
         /// <summary>
         /// Prints a user-readable help text
         /// </summary>
-        template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
+        template <typename TSTREAMT = typename std::basic_ostream<CHAR>::traits_type>
         inline void PrintHelp(std::basic_ostream<CHAR, TSTREAMT>& stream) const;
 
         /// <summary>
@@ -916,7 +916,7 @@ namespace yaclap
         /// If `result.ShouldShowHelp() == true` prints the usage information.
         /// Both info is printed to the specified `stream`.
         /// </summary>
-        template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
+        template <typename TSTREAMT = typename std::basic_ostream<CHAR>::traits_type>
         inline void PrintErrorAndHelpIfNeeded(Result const& result, std::basic_ostream<CHAR, TSTREAMT>& stream) const;
 
     private:
@@ -932,7 +932,7 @@ namespace yaclap
             return length;
         }
 
-        template <typename TSTREAMT = std::basic_ostream<CHAR>::traits_type>
+        template <typename TSTREAMT = typename std::basic_ostream<CHAR>::traits_type>
         void PrintHelpImpl(Command<CHAR> const* command, std::basic_ostream<CHAR, TSTREAMT>& stream) const;
 
         class ResultImpl : public Result
@@ -1535,7 +1535,8 @@ namespace yaclap
     }
 
     template <typename CHAR>
-    Parser<CHAR>::Result Parser<CHAR>::Parse(int argc, const CHAR* const* argv, bool skipFirstArg /* = true */) const
+    typename Parser<CHAR>::Result Parser<CHAR>::Parse(int argc, const CHAR* const* argv,
+                                                      bool skipFirstArg /* = true */) const
     {
         using s = StringConsts;
 

@@ -7,6 +7,9 @@
 #endif
 #include <Windows.h>
 #include <tchar.h>
+#else
+#define _TCHAR char
+#define _T(A) A
 #endif
 
 #include "cmdargs.hpp"
@@ -21,6 +24,19 @@ int main(int argc, char* argv[])
 {
     Config cfg;
     bool parseOk = cfg.ParseCmdLine(argc, argv);
+
+    std::cout << "::info::"
+#if defined(DEBUG) || defined(_DEBUG)
+              << "DEBUG:"
+#else
+              << "RELEASE:"
+#endif
+#if defined(NDEBUG)
+              << "NDEBUG:"
+#else
+              << ":"
+#endif
+              << sizeof(_TCHAR) << "\n";
 
     std::cout << "::::";
     if (parseOk)
