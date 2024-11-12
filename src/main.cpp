@@ -37,6 +37,7 @@ int main(int argc, char* argv[])
               << ":"
 #endif
               << sizeof(_TCHAR) << "\n";
+    cfg.PrintVersionInfo();
 
     std::cout << "::::";
     if (parseOk)

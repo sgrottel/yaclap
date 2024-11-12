@@ -23,6 +23,9 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
         _T("yaclap.exe"),
         _T("Example application showing usage of yaclap and used for testing.")};
 
+    // usually, you want to keep this on true (default), unless you explicitly want to do something with the unmatched arguments
+    parser.SetErrorOnUnmatchedArguments(false);
+
     // Options with their values are usually optional
     // Input example:  --input C:\path\file.ext
     Option inputOption{
@@ -167,6 +170,16 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
             m_andArg += _T(" ");
         m_andArg += _T("| ");
         m_andArg += orValue.value();
+    }
+
+    // In this test application, we report unmatched arguments:
+    if (res.HasUnmatchedArguments())
+    {
+        std::wcout << L"Unmatched arguments: " << res.UnmatchedArguments().size() << L"\n";
+        for (auto const& arg : res.UnmatchedArguments())
+        {
+            std::wcout << L" unmatched> " << arg << L"\n";
+        }
     }
 
     // Finally,
