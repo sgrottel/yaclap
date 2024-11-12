@@ -193,6 +193,6 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
 
 void Config::PrintVersionInfo()
 {
-    std::cout << "::version: " << YACLAP_VERSION_MAJOR << "." << YACLAP_VERSION_MINOR << "." << YACLAP_VERSION_PATCH
-              << "." << YACLAP_VERSION_BUILD << "\n";
+    std::wcout << L"::version: " << YACLAP_VERSION_MAJOR << L"." << YACLAP_VERSION_MINOR << L"." << YACLAP_VERSION_PATCH
+               << L"." << YACLAP_VERSION_BUILD << L"\n";
 }
