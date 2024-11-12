@@ -178,7 +178,7 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
         std::wcout << L"Unmatched arguments: " << res.UnmatchedArguments().size() << L"\n";
         for (auto const& arg : res.UnmatchedArguments())
         {
-            std::wcout << L" unmatched> " << arg << L"\n";
+            std::wcout << L" unmatched> " << arg.data() << L"\n";
         }
     }
 
