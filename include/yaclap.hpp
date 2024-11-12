@@ -28,6 +28,12 @@
 #ifndef _YACLAP_HPP_INCLUDED_
 #define _YACLAP_HPP_INCLUDED_
 
+// yaclap semantic version: MAJOR.MINOR.PATCH(.BUILD)
+#define YACLAP_VERSION_MAJOR 0
+#define YACLAP_VERSION_MINOR 1
+#define YACLAP_VERSION_PATCH 0
+#define YACLAP_VERSION_BUILD 0
+
 #pragma once
 
 #include <algorithm>
@@ -808,7 +814,7 @@ namespace yaclap
             /// <summary>
             /// Returns true if there is at least one unmatched argument.
             /// </summary>
-            inline bool HasUnmatchedArguments() const
+            inline bool HasUnmatchedArguments() const noexcept
             {
                 return !m_unmatchedArguments.empty();
             }
@@ -1098,6 +1104,8 @@ namespace yaclap
         static constexpr char const* helpAlias4 = "/?";
         static constexpr char const* helpDescription = "Show help and usage information";
 
+        static constexpr char const* parserStopToken = "--";
+
         static constexpr char const* errorOptionNoValue = "Value of option expected, but no more arguments: ";
         static constexpr char const* errorUnmatchedArguments = "Unmatched arguments present in command line";
         static constexpr char const* errorRequiredArgumentMissing = "Required argument missing: ";
@@ -1140,6 +1148,8 @@ namespace yaclap
         static constexpr wchar_t const* helpAlias3 = L"-?";
         static constexpr wchar_t const* helpAlias4 = L"/?";
         static constexpr wchar_t const* helpDescription = L"Show help and usage information";
+
+        static constexpr wchar_t const* parserStopToken = L"--";
 
         static constexpr wchar_t const* errorOptionNoValue = L"Value of option expected, but no more arguments: ";
         static constexpr wchar_t const* errorUnmatchedArguments = L"Unmatched arguments present in command line";
@@ -1572,6 +1582,15 @@ namespace yaclap
         {
             const std::basic_string_view<CHAR> arg{argv[argi]};
             bool handled = false;
+
+            if (arg == s::parserStopToken)
+            {
+                for (argi++; argi < argc; ++argi)
+                {
+                    res.AddUnmatchedArgument(std::basic_string_view<CHAR>{argv[argi]});
+                }
+                break;
+            }
 
             if (pendingOption != nullptr)
             {

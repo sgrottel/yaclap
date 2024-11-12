@@ -23,6 +23,9 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
         _T("yaclap.exe"),
         _T("Example application showing usage of yaclap and used for testing.")};
 
+    // usually, you want to keep this on true (default), unless you explicitly want to do something with the unmatched arguments
+    parser.SetErrorOnUnmatchedArguments(false);
+
     // Options with their values are usually optional
     // Input example:  --input C:\path\file.ext
     Option inputOption{
@@ -169,6 +172,16 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
         m_andArg += orValue.value();
     }
 
+    // In this test application, we report unmatched arguments:
+    if (res.HasUnmatchedArguments())
+    {
+        std::wcout << L"Unmatched arguments: " << res.UnmatchedArguments().size() << L"\n";
+        for (auto const& arg : res.UnmatchedArguments())
+        {
+            std::wcout << L" unmatched> " << arg.data() << L"\n";
+        }
+    }
+
     // Finally,
     // if the implicit `--help` switch was triggered, or if the parsing failed, we should show the user any error
     // message and the usage information of our software.
@@ -176,4 +189,10 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
 
     // ... and we tell the application logic if cmd line parsing was successful.
     return res.IsSuccess();
+}
+
+void Config::PrintVersionInfo()
+{
+    std::wcout << L"::version: " << YACLAP_VERSION_MAJOR << L"." << YACLAP_VERSION_MINOR << L"." << YACLAP_VERSION_PATCH
+               << L"." << YACLAP_VERSION_BUILD << L"\n";
 }

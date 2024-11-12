@@ -32,6 +32,10 @@ $tests =
 	@{
 		"args" = @("B","/V","7","and","or");
 		"regs" = @("^::::oB0_7a$", "^and | or$");
+	},
+	@{
+		"args" = @("B", "and", "--", "--value", "5");
+		"regs" = @("^::::oB0_0a$", "^Unmatched arguments: 2$", "^\s*unmatched> --value$", "^\s*unmatched> 5$", "^and$");
 	}
 );
 

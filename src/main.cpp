@@ -25,40 +25,41 @@ int main(int argc, char* argv[])
     Config cfg;
     bool parseOk = cfg.ParseCmdLine(argc, argv);
 
-    std::cout << "::info::"
+    std::wcout << L"::info::"
 #if defined(DEBUG) || defined(_DEBUG)
-              << "DEBUG:"
+              << L"DEBUG:"
 #else
-              << "RELEASE:"
+              << L"RELEASE:"
 #endif
 #if defined(NDEBUG)
-              << "NDEBUG:"
+              << L"NDEBUG:"
 #else
-              << ":"
+              << L":"
 #endif
-              << sizeof(_TCHAR) << "\n";
+              << sizeof(_TCHAR) << L"\n";
+    cfg.PrintVersionInfo();
 
-    std::cout << "::::";
+    std::wcout << L"::::";
     if (parseOk)
     {
-        std::cout << "o";
+        std::wcout << L"o";
         switch (cfg.m_cmd)
         {
             case Command::None:
-                std::cout << "n";
+                std::wcout << L"n";
                 break;
             case Command::CommandA:
-                std::cout << "A";
+                std::wcout << L"A";
                 break;
             case Command::CommandB:
-                std::cout << "B";
+                std::wcout << L"B";
                 break;
             default:
-                std::cout << "x";
+                std::wcout << L"x";
                 break;
         }
-        std::cout << cfg.m_verbose << ((cfg.m_input != nullptr) ? "i" : "_") << cfg.m_value
-                  << ((!cfg.m_andArg.empty()) ? "a" : "_");
+        std::wcout << cfg.m_verbose << ((cfg.m_input != nullptr) ? L"i" : L"_") << cfg.m_value
+                  << ((!cfg.m_andArg.empty()) ? L"a" : L"_");
         if (cfg.m_input != nullptr)
         {
             std::wcout << L"\n" << cfg.m_input;
@@ -67,11 +68,11 @@ int main(int argc, char* argv[])
         {
             std::wcout << L"\n" << cfg.m_andArg.c_str();
         }
-        std::cout << std::endl;
+        std::wcout << std::endl;
     }
     else
     {
-        std::cout << "f-----" << std::endl;
+        std::wcout << L"f-----" << std::endl;
     }
 
     return parseOk ? 0 : 1;
