@@ -34,4 +34,7 @@ struct Config
     std::basic_string<_TCHAR> m_andArg;
 
     bool ParseCmdLine(int argc, const _TCHAR* const* argv);
+
+    void PrintVersionInfo();
+
 };

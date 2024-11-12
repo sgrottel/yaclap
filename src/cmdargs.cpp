@@ -177,3 +177,9 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
     // ... and we tell the application logic if cmd line parsing was successful.
     return res.IsSuccess();
 }
+
+void Config::PrintVersionInfo()
+{
+    std::cout << "::version: " << YACLAP_VERSION_MAJOR << "." << YACLAP_VERSION_MINOR << "." << YACLAP_VERSION_PATCH
+              << "." << YACLAP_VERSION_BUILD << "\n";
+}

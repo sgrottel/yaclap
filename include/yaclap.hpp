@@ -28,6 +28,12 @@
 #ifndef _YACLAP_HPP_INCLUDED_
 #define _YACLAP_HPP_INCLUDED_
 
+// yaclap semantic version: MAJOR.MINOR.PATCH(.BUILD)
+#define YACLAP_VERSION_MAJOR 0
+#define YACLAP_VERSION_MINOR 1
+#define YACLAP_VERSION_PATCH 0
+#define YACLAP_VERSION_BUILD 0
+
 #pragma once
 
 #include <algorithm>
@@ -808,7 +814,7 @@ namespace yaclap
             /// <summary>
             /// Returns true if there is at least one unmatched argument.
             /// </summary>
-            inline bool HasUnmatchedArguments() const
+            inline bool HasUnmatchedArguments() const noexcept
             {
                 return !m_unmatchedArguments.empty();
             }
