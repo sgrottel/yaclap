@@ -734,7 +734,11 @@ namespace yaclap
             /// </summary>
             /// <remarks>
             /// Syntax:
-            ///   TODO
+            ///     [+-]?[0..9]*\.?[0..9]*([eE][+-]?[0..9]+)?
+            ///   The three digit sequences are: whole number, fraction, exponent.
+            ///   Either whole number or fraction must be present. Whole number can include a trailing dot. Fraction
+            ///   must start with the dot. Sign character is optional. Exponent must start with the e-marker. Exponent
+            ///   is optional. Exponent sign is optional.
             /// </remarks>
             std::optional<double> AsDouble(bool errorWhenTypeParingFails = true) const;
 
@@ -767,7 +771,6 @@ namespace yaclap
             std::shared_ptr<ResultErrorInfo> m_errorInfo;
             std::optional<WithIdentity<CHAR>> m_source;
             int m_position;
-
         };
 
         /// <summary>
@@ -935,8 +938,7 @@ namespace yaclap
             /// </summary>
             inline size_t HasSwitch(Switch<CHAR> const& swt) const
             {
-                return std::count_if(m_switches.cbegin(), m_switches.cend(),
-                                     [&swt](WithIdentity<CHAR> const& s)
+                return std::count_if(m_switches.cbegin(), m_switches.cend(), [&swt](WithIdentity<CHAR> const& s)
                                      { return WithIdentity<CHAR>::Equals(s, swt); });
             }
 
@@ -1276,6 +1278,7 @@ namespace yaclap
         static constexpr char const* errorParserValueConversion = "Failed to convert value for argument ";
         static constexpr char const* errorGenericParserError = "internal generic error";
         static constexpr char const* errorParserUnexpectedCharAt = "unexpected character at position ";
+        static constexpr char const* errorContextSeparator = ": ";
 
         static inline bool isspace(char c)
         {
@@ -1287,7 +1290,7 @@ namespace yaclap
             return c;
         }
 
-        template<typename T>
+        template <typename T>
         static inline std::string to_string(T v)
         {
             return std::to_string(v);
@@ -1331,6 +1334,7 @@ namespace yaclap
         static constexpr wchar_t const* errorParserValueConversion = L"Failed to convert value for argument ";
         static constexpr wchar_t const* errorGenericParserError = L"internal generic error";
         static constexpr wchar_t const* errorParserUnexpectedCharAt = L"unexpected character at position ";
+        static constexpr wchar_t const* errorContextSeparator = L": ";
 
         static inline bool isspace(wchar_t c)
         {
@@ -1921,7 +1925,9 @@ namespace yaclap
         long long base = 10;
         bool neg = false;
         int state = 0;
-        for (auto strIt = std::basic_string_view<CHAR>::cbegin(); strIt != std::basic_string_view<CHAR>::cend(); ++strIt)
+        // TODO: trailing whitespaces!
+        for (auto strIt = std::basic_string_view<CHAR>::cbegin(); strIt != std::basic_string_view<CHAR>::cend();
+             ++strIt)
         {
             char c = s::asChar(*strIt);
             switch (state)
@@ -1984,8 +1990,7 @@ namespace yaclap
                     {
                         std::basic_string<CHAR> msg{s::errorParserValueConversion};
                         msg += s::to_string(ResultValueView::GetPosition());
-                        msg += static_cast<CHAR>(':');
-                        msg += s::s;
+                        msg += s::errorContextSeparator;
                         msg += s::errorParserUnexpectedCharAt;
                         msg += s::to_string(1 + strIt - std::basic_string_view<CHAR>::cbegin());
                         m_errorInfo->SetError(msg);
@@ -1996,8 +2001,7 @@ namespace yaclap
                 {
                     std::basic_string<CHAR> msg{s::errorParserValueConversion};
                     msg += s::to_string(ResultValueView::GetPosition());
-                    msg += static_cast<CHAR>(':');
-                    msg += s::s;
+                    msg += s::errorContextSeparator;
                     msg += s::errorGenericParserError;
                     m_errorInfo->SetError(msg);
                     return std::nullopt;

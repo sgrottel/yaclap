@@ -62,9 +62,9 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
         .AddAlias(_T("-V"))
         .AddAlias(_T("/V"));
 
-    Option doubleValueOption{_T("--double"), _T("dval"), _T("A double-precision float value. Must only be specified once.")};
+    Option doubleValueOption{_T("--double"), _T("dval"), _T("A double-precision float value. Must not be specified more than once.")};
 
-    Option boolValueOption{_T("--bool"), _T("bval"), _T("A boolean value. Must only be specified once.")};
+    Option boolValueOption{_T("--bool"), _T("bval"), _T("A boolean value. Must not be specified more than once.")};
 
     // An Argument is a named placeholder for a command line argument not matched otherwise as Command, Option, or
     // Switch. These are usually required input for specific commands.

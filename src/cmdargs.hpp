@@ -42,5 +42,4 @@ struct Config
     bool ParseCmdLine(int argc, const _TCHAR* const* argv);
 
     void PrintVersionInfo();
-
 };
