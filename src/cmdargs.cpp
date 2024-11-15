@@ -54,13 +54,17 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
         .AddAlias(_T("A"))
         .Add(inputOption);
 
-    Option valueOption{
+    Option intValueOption{
         {_T("--value"), StringCompare::CaseInsensitive},
         std::basic_string<_TCHAR>(_T("int")),
         _T("The value option is an int. If specified multiple times, the values will be summarized.")};
-    valueOption
+    intValueOption
         .AddAlias(_T("-V"))
         .AddAlias(_T("/V"));
+
+    Option doubleValueOption{_T("--double"), _T("dval"), _T("A double-precision float value. Must only be specified once.")};
+
+    Option boolValueOption{_T("--bool"), _T("bval"), _T("A boolean value. Must only be specified once.")};
 
     // An Argument is a named placeholder for a command line argument not matched otherwise as Command, Option, or
     // Switch. These are usually required input for specific commands.
@@ -86,7 +90,9 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
     commandB
         .AddAlias({_T("CmdB"), StringCompare::CaseInsensitive})
         .AddAlias(_T("B"))
-        .Add(valueOption)
+        .Add(intValueOption)
+        .Add(doubleValueOption)
+        .Add(boolValueOption)
         .Add(andArgument)
         .Add(orArgument);
 
@@ -129,9 +135,10 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
         m_input = inputValue.value().data();
     }
 
-    m_value = 0;
-    for (std::basic_string_view<_TCHAR> const& s : res.GetOptionValues(valueOption))
+    m_intValue = 0;
+    for (std::basic_string_view<_TCHAR> const& s : res.GetOptionValues(intValueOption))
     {
+        // TODO: Simplify
 #ifdef _WIN32
         _TCHAR* end = nullptr;
         long v = _tcstol(s.data(), &end, 10);
@@ -147,11 +154,23 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
             if (end == s.data())
             {
                 res.SetError(std::basic_string<_TCHAR>{_T("Failed to parse an option value as int: ")} + s.data() +
-                             _T(" [Option: ") + valueOption.NameAliasBegin()->GetName() + _T("]"));
+                             _T(" [Option: ") + intValueOption.NameAliasBegin()->GetName() + _T("]"));
                 continue;
             }
         }
-        m_value += v;
+        m_intValue += v;
+    }
+
+    auto dValOpt = res.GetOptionValue(doubleValueOption, Parser::Result::ErrorIfMultiple);
+    if (dValOpt)
+    {
+        // TODO: Implement
+    }
+
+    auto bValOpt = res.GetOptionValue(boolValueOption, Parser::Result::ErrorIfMultiple);
+    if (bValOpt)
+    {
+        // TODO: Implement
     }
 
     // Switch
