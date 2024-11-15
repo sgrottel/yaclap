@@ -36,6 +36,7 @@ int main(int argc, char* argv[])
 #else
               << L":"
 #endif
+              << (sizeof(void*) * 8) << L":"
               << sizeof(_TCHAR) << L"\n";
     cfg.PrintVersionInfo();
 
