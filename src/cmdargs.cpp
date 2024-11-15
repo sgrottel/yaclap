@@ -3,6 +3,8 @@
 
 #include "cmdargs.hpp"
 
+#include <iostream>
+
 bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
 {
     using Parser = yaclap::Parser<_TCHAR>;
