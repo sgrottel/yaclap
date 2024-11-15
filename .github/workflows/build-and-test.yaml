@@ -31,13 +31,13 @@ jobs:
 
           - os: ubuntu-latest
             compiler: { "c": "msvc", "cpp": "msvc"}
-          - os: ubuntu-latest
             arch: x86
+            charset: _Unicode
 
           - os: macos-latest
             compiler: { "c": "msvc", "cpp": "msvc"}
-          - os: macos-latest
             arch: x86
+            charset: _Unicode
 
     runs-on: ${{ matrix.os }}
 

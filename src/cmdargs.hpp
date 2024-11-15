@@ -3,13 +3,8 @@
 #ifdef _WIN32
 #include <tchar.h>
 #else
-#ifdef UNICODE
-#define _TCHAR wchar_t
-#define _T(A) L##A
-#else
 #define _TCHAR char
 #define _T(A) A
-#endif
 #endif
 #include <string>
 
