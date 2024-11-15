@@ -34,8 +34,9 @@ int main(int argc, char* argv[])
 #if defined(NDEBUG)
               << L"NDEBUG:"
 #else
-              << (sizeof(void*) * 8) << L":"
+              << L":"
 #endif
+              << (sizeof(void*) * 8) << L":"
               << sizeof(_TCHAR) << L"\n";
     cfg.PrintVersionInfo();
 
