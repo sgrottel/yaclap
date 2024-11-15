@@ -49,7 +49,7 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-        if ${{ matrix.os }} == "windows-latest"; then
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             echo "cmake_platform=\"-DCMAKE_GENERATOR_PLATFORM=${{ matrix.arch }}\"" >> "$GITHUB_OUTPUT"
         else
             echo "cmake_platform=" >> "$GITHUB_OUTPUT"
