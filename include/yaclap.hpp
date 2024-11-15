@@ -30,7 +30,7 @@
 
 // yaclap semantic version: MAJOR.MINOR.PATCH(.BUILD)
 #define YACLAP_VERSION_MAJOR 0
-#define YACLAP_VERSION_MINOR 1
+#define YACLAP_VERSION_MINOR 2
 #define YACLAP_VERSION_PATCH 0
 #define YACLAP_VERSION_BUILD 0
 
@@ -604,16 +604,9 @@ namespace yaclap
             return m_errorOnUnmatchedArguments;
         }
 
-        /// <summary>
-        /// The parse result only identifies commands, options, switches, and arguments.
-        /// Use additional calls on this object to convert and assign values.
-        /// </summary>
-        class Result
+        class ResultErrorInfo
         {
         public:
-            using string_t = std::basic_string<CHAR>;
-            using string_view_t = std::basic_string_view<CHAR>;
-
             /// <summary>
             /// Returns true if this is the Result of a successful parsing,
             /// i.e. no errors were encountered, and the implicit help switch was not triggered.
@@ -647,7 +640,8 @@ namespace yaclap
             /// <summary>
             /// Sets the error message to be shown to the user
             /// </summary>
-            inline void SetError(const string_t& message, bool setUnsuccessful = true)
+            template <typename T, typename A>
+            inline void SetError(const std::basic_string<CHAR, T, A>& message, bool setUnsuccessful = true)
             {
                 SetError(message.c_str(), setUnsuccessful);
             }
@@ -655,9 +649,176 @@ namespace yaclap
             /// <summary>
             /// Gets the set error message
             /// </summary>
-            inline string_t const& GetError() const noexcept
+            inline std::basic_string<CHAR> const& GetError() const noexcept
             {
                 return m_error;
+            }
+
+            inline void SetShouldShowHelp()
+            {
+                m_shouldShowHelp = true;
+            }
+
+            inline void SetSuccess()
+            {
+                m_success = true;
+            }
+
+        private:
+            bool m_success = false;
+            bool m_shouldShowHelp = false;
+            std::basic_string<CHAR> m_error{};
+        };
+
+        class ResultValueView : public std::basic_string_view<CHAR>
+        {
+        public:
+            ResultValueView()
+                : m_errorInfo{std::make_shared<ResultErrorInfo>()}, m_source{std::nullopt}, m_position{-1}
+            {
+            }
+
+            ResultValueView(ResultValueView const& src) = default;
+
+            ResultValueView(ResultValueView&& src) = default;
+
+            inline std::optional<WithIdentity<CHAR>> const& GetSource() const noexcept
+            {
+                return m_source;
+            }
+
+            inline bool IsFromSource(WithIdentity<CHAR> const& src) const
+            {
+                if (!m_source.has_value())
+                {
+                    return false;
+                }
+                return WithIdentity<CHAR>::Equals(m_source.value(), src);
+            }
+
+            inline bool HasValue() const noexcept
+            {
+                return m_position >= 0;
+            }
+
+            inline operator bool() const noexcept
+            {
+                return HasValue();
+            }
+
+            inline int GetPosition() const noexcept
+            {
+                return m_position;
+            }
+
+            /// <summary>
+            /// Converts a string optional return from this result into an integer (signed 64bit long long) optional.
+            /// If the string cannot be parsed and converted, an error will be set on this result object, unless
+            /// deactivated with the optional bool parameter, and the function will return a null optional.
+            /// </summary>
+            /// <remarks>
+            /// Syntax:
+            ///     [+-]?[0..9]+
+            ///   Optional sign, followed by number characters in base-10
+            ///     [+-]?[xX][0..9a..fA..F]+
+            ///   Optional sign, 'x' marker, followed by hex-number characters in base-16
+            ///     [+-]?[bB][0..1]+
+            ///   Optional sign, 'b' marker, followed by binary-number characters in base-2
+            /// </remarks>
+            std::optional<long long> AsInteger(bool errorWhenTypeParingFails = true) const;
+
+            /// <summary>
+            /// Converts a string optional return from this result into a floating-point (64bit double) optional.
+            /// If the string cannot be parsed and converted, an error will be set on this result object, unless
+            /// deactivated with the optional bool parameter, and the function will return a null optional.
+            /// </summary>
+            /// <remarks>
+            /// Syntax:
+            ///   TODO
+            /// </remarks>
+            std::optional<double> AsDouble(bool errorWhenTypeParingFails = true) const;
+
+            /// <summary>
+            /// Converts a string optional return from this result into a boolean (bool) optional.
+            /// If the string cannot be parsed and converted, an error will be set on this result object, unless
+            /// deactivated with the optional bool parameter, and the function will return a null optional.
+            /// </summary>
+            /// <remarks>
+            /// Syntax:
+            ///     true, t, on, yes, y
+            ///   If the input string, trimmed from leading and trailing whitespace, matches on of these words
+            ///   case-insenstively, the return value is "true"
+            ///     false, f, off, no, n
+            ///   If the input string, trimmed from leading and trailing whitespace, matches on of these words
+            ///   case-insenstively, the return value is "false"
+            ///     (int)
+            ///   Else, if the input string can be parsed as integer (cf. AsInteger), the return value is "(int) != 0"
+            /// </remarks>
+            std::optional<bool> AsBool(bool errorWhenTypeParingFails = true) const;
+
+        protected:
+            ResultValueView(std::basic_string_view<CHAR> str, std::shared_ptr<ResultErrorInfo> errorInfo,
+                            std::optional<WithIdentity<CHAR>> source, int position)
+                : std::basic_string_view<CHAR>{str}, m_errorInfo{errorInfo}, m_source{source}, m_position{position}
+            {
+            }
+
+        private:
+            std::shared_ptr<ResultErrorInfo> m_errorInfo;
+            std::optional<WithIdentity<CHAR>> m_source;
+            int m_position;
+
+        };
+
+        /// <summary>
+        /// The parse result only identifies commands, options, switches, and arguments.
+        /// Use additional calls on this object to convert and assign values.
+        /// </summary>
+        class Result
+        {
+        public:
+            using string_t = std::basic_string<CHAR>;
+            using string_view_t = std::basic_string_view<CHAR>;
+
+            /// <summary>
+            /// Returns true if this is the Result of a successful parsing,
+            /// i.e. no errors were encountered, and the implicit help switch was not triggered.
+            /// </summary>
+            inline bool IsSuccess() const noexcept
+            {
+                return m_errorInfo->IsSuccess();
+            }
+
+            /// <summary>
+            /// Returns true if the help information should be shown after assigning all results
+            /// </summary>
+            inline bool ShouldShowHelp() const noexcept
+            {
+                return m_errorInfo->ShouldShowHelp();
+            }
+
+            /// <summary>
+            /// Sets the error message to be shown to the user
+            /// </summary>
+            inline void SetError(const CHAR* message, bool setUnsuccessful = true)
+            {
+                m_errorInfo->SetError(message, setUnsuccessful);
+            }
+
+            /// <summary>
+            /// Sets the error message to be shown to the user
+            /// </summary>
+            inline void SetError(const string_t& message, bool setUnsuccessful = true)
+            {
+                m_errorInfo->SetError(message.c_str(), setUnsuccessful);
+            }
+
+            /// <summary>
+            /// Gets the set error message
+            /// </summary>
+            inline string_t const& GetError() const noexcept
+            {
+                return m_errorInfo->GetError();
             }
 
             /// <summary>
@@ -695,7 +856,7 @@ namespace yaclap
             /// <summary>
             /// Returns all Options occured in the command line in order in which they appeared.
             /// </summary>
-            inline std::vector<std::tuple<WithIdentity<CHAR>, string_view_t>> const& Options() const noexcept
+            inline std::vector<ResultValueView> const& Options() const noexcept
             {
                 return m_options;
             }
@@ -706,23 +867,22 @@ namespace yaclap
             inline size_t GetOptionCount(Option<CHAR> const& opt) const
             {
                 return std::count_if(m_options.cbegin(), m_options.cend(),
-                                     [&opt](std::tuple<WithIdentity<CHAR>, string_view_t> const& o)
-                                     { return WithIdentity<CHAR>::Equals(std::get<0>(o), opt); });
+                                     [&opt](ResultValueView const& o) { return o.IsFromSource(opt); });
             }
 
             /// <summary>
             /// Returns the value of the _first_ occurance of the specified Option `opt` in the command line.
             /// </summary>
-            inline std::optional<string_view_t> GetOptionValue(Option<CHAR> const& opt) const
+            inline ResultValueView GetOptionValue(Option<CHAR> const& opt) const
             {
-                for (std::tuple<WithIdentity<CHAR>, string_view_t> const& o : m_options)
+                for (ResultValueView const& o : m_options)
                 {
-                    if (WithIdentity<CHAR>::Equals(std::get<0>(o), opt))
+                    if (o.IsFromSource(opt))
                     {
-                        return std::get<1>(o);
+                        return o;
                     }
                 }
-                return std::nullopt;
+                return {};
             }
 
             /// <summary>
@@ -735,13 +895,13 @@ namespace yaclap
             /// If `setErrorIfMultiple` is set to `ErrorIfMultiple` or `true`, and the Option was found more than one
             /// time in the command line, then an error message is set in the result object, and `nullopt` is returned.
             /// </summary>
-            inline std::optional<string_view_t> GetOptionValue(Option<CHAR> const& opt, bool setErrorIfMultiple)
+            inline ResultValueView GetOptionValue(Option<CHAR> const& opt, bool setErrorIfMultiple)
             {
                 if (GetOptionCount(opt) > 1)
                 {
-                    SetError(string_t{StringConsts::errorOptionSpecifiedMultipletimes} +
-                             opt.NameAliasBegin()->GetName());
-                    return std::nullopt;
+                    m_errorInfo->SetError(string_t{StringConsts::errorOptionSpecifiedMultipletimes} +
+                                          opt.NameAliasBegin()->GetName());
+                    return {};
                 }
                 return GetOptionValue(opt);
             }
@@ -749,14 +909,14 @@ namespace yaclap
             /// <summary>
             /// Returns all values of all occurances of the specified Option `opt` in the command line.
             /// </summary>
-            inline std::vector<string_view_t> GetOptionValues(Option<CHAR> const& opt) const
+            inline std::vector<ResultValueView> GetOptionValues(Option<CHAR> const& opt) const
             {
-                std::vector<string_view_t> result;
-                for (std::tuple<WithIdentity<CHAR>, string_view_t> const& o : m_options)
+                std::vector<ResultValueView> result;
+                for (ResultValueView const& o : m_options)
                 {
-                    if (WithIdentity<CHAR>::Equals(std::get<0>(o), opt))
+                    if (o.IsFromSource(opt))
                     {
-                        result.push_back(std::get<1>(o));
+                        result.push_back(o);
                     }
                 }
                 return result;
@@ -783,7 +943,7 @@ namespace yaclap
             /// <summary>
             /// Returns all matched Arguments occured in the command line in the order in which they appeared
             /// </summary>
-            inline std::vector<std::tuple<WithIdentity<CHAR>, string_view_t>> const& MatchedArguments() const noexcept
+            inline std::vector<ResultValueView> const& MatchedArguments() const noexcept
             {
                 return m_matchedArguments;
             }
@@ -791,22 +951,22 @@ namespace yaclap
             /// <summary>
             /// Gets the value of the specified Argument `arg`
             /// </summary>
-            inline std::optional<string_view_t> GetArgument(Argument<CHAR> const& arg) const
+            inline ResultValueView GetArgument(Argument<CHAR> const& arg) const
             {
                 for (auto const& matched : m_matchedArguments)
                 {
-                    if (WithIdentity<CHAR>::Equals(std::get<0>(matched), arg))
+                    if (matched.IsFromSource(arg))
                     {
-                        return std::get<1>(matched);
+                        return matched;
                     }
                 }
-                return std::nullopt;
+                return {};
             }
 
             /// <summary>
             /// Returns all unmatched arguments from the command line.
             /// </summary>
-            inline std::vector<string_view_t> const& UnmatchedArguments() const noexcept
+            inline std::vector<ResultValueView> const& UnmatchedArguments() const noexcept
             {
                 return m_unmatchedArguments;
             }
@@ -827,10 +987,9 @@ namespace yaclap
                 m_commands.push_back(cmd);
             }
 
-            template <typename T>
-            inline void AddOption(Option<CHAR> const& opt, std::basic_string_view<CHAR, T> const& valueStr)
+            inline void AddOption(ResultValueView&& rv)
             {
-                m_options.push_back({opt, valueStr});
+                m_options.push_back(std::move(rv));
             }
 
             inline void AddSwitch(Switch<CHAR> const& swt)
@@ -838,38 +997,29 @@ namespace yaclap
                 m_switches.push_back(swt);
             }
 
-            template <typename T>
-            inline void AddMatchedArgument(Argument<CHAR> const& arg, std::basic_string_view<CHAR, T> const& valueStr)
+            inline void AddMatchedArgument(ResultValueView&& rv)
             {
-                m_matchedArguments.push_back({arg, valueStr});
+                m_matchedArguments.push_back(std::move(rv));
             }
 
-            template <typename T>
-            inline void AddUnmatchedArgument(std::basic_string_view<CHAR, T> const& str)
+            inline void AddUnmatchedArgument(ResultValueView&& rv)
             {
-                m_unmatchedArguments.push_back(str);
+                m_unmatchedArguments.push_back(std::move(rv));
             }
 
-            inline void SetShouldShowHelp()
+            inline std::shared_ptr<ResultErrorInfo> GetErrorInfo()
             {
-                m_shouldShowHelp = true;
-            }
-
-            inline void SetSuccess()
-            {
-                m_success = true;
+                return m_errorInfo;
             }
 
         private:
-            bool m_success = false;
-            bool m_shouldShowHelp = false;
-            string_t m_error{};
+            std::shared_ptr<ResultErrorInfo> m_errorInfo{std::make_shared<ResultErrorInfo>()};
 
             std::vector<WithIdentity<CHAR>> m_commands;
-            std::vector<std::tuple<WithIdentity<CHAR>, string_view_t>> m_options;
+            std::vector<ResultValueView> m_options;
             std::vector<WithIdentity<CHAR>> m_switches;
-            std::vector<std::tuple<WithIdentity<CHAR>, string_view_t>> m_matchedArguments;
-            std::vector<string_view_t> m_unmatchedArguments;
+            std::vector<ResultValueView> m_matchedArguments;
+            std::vector<ResultValueView> m_unmatchedArguments;
         };
 
         /// <summary>
@@ -941,6 +1091,18 @@ namespace yaclap
         template <typename TSTREAMT = typename std::basic_ostream<CHAR>::traits_type>
         void PrintHelpImpl(Command<CHAR> const* command, std::basic_ostream<CHAR, TSTREAMT>& stream) const;
 
+        class ResultValueViewImpl : public ResultValueView
+        {
+        public:
+            ResultValueViewImpl() = default;
+
+            ResultValueViewImpl(std::basic_string_view<CHAR> str, std::shared_ptr<ResultErrorInfo> errorInfo,
+                                std::optional<WithIdentity<CHAR>> source, int position)
+                : ResultValueView(str, errorInfo, source, position)
+            {
+            }
+        };
+
         class ResultImpl : public Result
         {
         public:
@@ -954,8 +1116,7 @@ namespace yaclap
             using Result::AddOption;
             using Result::AddSwitch;
             using Result::AddUnmatchedArgument;
-            using Result::SetShouldShowHelp;
-            using Result::SetSuccess;
+            using Result::GetErrorInfo;
         };
 
         bool m_withImplicitHelpSwitch = true;
@@ -978,7 +1139,7 @@ namespace yaclap
     template <typename TSTREAMT>
     void Parser<CHAR>::Result::PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, bool tryUseColor) const
     {
-        if (Result::m_error.empty())
+        if (Result::m_errorInfo->GetError().empty())
             return;
 
         bool useColor = false;
@@ -1001,7 +1162,7 @@ namespace yaclap
 #endif
         if (useColor)
             stream << "\x1B[91m\x1B[40m";
-        stream << m_error;
+        stream << m_errorInfo->GetError();
         if (useColor)
             stream << "\x1B[0m";
         stream << "\n";
@@ -1112,14 +1273,24 @@ namespace yaclap
         static constexpr char const* errorOptionSpecifiedMultipletimes =
             "Option was specified multiple times in the command line: ";
 
+        static constexpr char const* errorParserValueConversion = "Failed to convert value for argument ";
+        static constexpr char const* errorGenericParserError = "internal generic error";
+        static constexpr char const* errorParserUnexpectedCharAt = "unexpected character at position ";
+
         static inline bool isspace(char c)
         {
             return std::isspace(c);
         }
 
-        static inline char cast(char c)
+        static inline char asChar(char c)
         {
             return c;
+        }
+
+        template<typename T>
+        static inline std::string to_string(T v)
+        {
+            return std::to_string(v);
         }
     };
 
@@ -1157,14 +1328,24 @@ namespace yaclap
         static constexpr wchar_t const* errorOptionSpecifiedMultipletimes =
             L"Option was specified multiple times in the command line: ";
 
+        static constexpr wchar_t const* errorParserValueConversion = L"Failed to convert value for argument ";
+        static constexpr wchar_t const* errorGenericParserError = L"internal generic error";
+        static constexpr wchar_t const* errorParserUnexpectedCharAt = L"unexpected character at position ";
+
         static inline bool isspace(wchar_t c)
         {
             return std::iswspace(c);
         }
 
-        static inline char cast(wchar_t c)
+        static inline char asChar(wchar_t c)
         {
             return (static_cast<int>(c) <= 127) ? static_cast<char>(c) : '?';
+        }
+
+        template <typename T>
+        static inline std::wstring to_string(T v)
+        {
+            return std::to_wstring(v);
         }
     };
 
@@ -1587,14 +1768,15 @@ namespace yaclap
             {
                 for (argi++; argi < argc; ++argi)
                 {
-                    res.AddUnmatchedArgument(std::basic_string_view<CHAR>{argv[argi]});
+                    res.AddUnmatchedArgument(ResultValueViewImpl{std::basic_string_view<CHAR>{argv[argi]},
+                                                                 res.GetErrorInfo(), std::nullopt, argi});
                 }
                 break;
             }
 
             if (pendingOption != nullptr)
             {
-                res.AddOption(*pendingOption, arg);
+                res.AddOption(ResultValueViewImpl{arg, res.GetErrorInfo(), *pendingOption, argi});
                 handled = true;
                 pendingOption = nullptr;
             }
@@ -1632,7 +1814,7 @@ namespace yaclap
                 if (opt->IsMatchWithValue(arg, valueStr))
                 {
                     handled = true;
-                    res.AddOption(*opt, valueStr);
+                    res.AddOption(ResultValueViewImpl{valueStr, res.GetErrorInfo(), *opt, argi});
                     break;
                 }
             }
@@ -1645,7 +1827,7 @@ namespace yaclap
                     handled = true;
                     if (WithIdentity<CHAR>::Equals(*swt, helpSwitch))
                     {
-                        res.SetShouldShowHelp();
+                        res.GetErrorInfo()->SetShouldShowHelp();
                     }
                     else
                     {
@@ -1660,14 +1842,14 @@ namespace yaclap
             if (!allArguments.empty())
             {
                 Argument<CHAR> const* ma = allArguments.front();
-                res.AddMatchedArgument(*ma, arg);
+                res.AddMatchedArgument(ResultValueViewImpl{arg, res.GetErrorInfo(), *ma, argi});
                 handled = true;
                 allArguments.erase(allArguments.begin());
             }
             if (handled)
                 continue;
 
-            res.AddUnmatchedArgument(arg);
+            res.AddUnmatchedArgument(ResultValueViewImpl{arg, res.GetErrorInfo(), std::nullopt, argi});
         }
 
         Argument<CHAR> const* missingRequiredArgument = nullptr;
@@ -1698,7 +1880,7 @@ namespace yaclap
         }
         else
         {
-            res.SetSuccess();
+            res.GetErrorInfo()->SetSuccess();
         }
 
         return res;
@@ -1729,6 +1911,119 @@ namespace yaclap
         {
             Parser<CHAR>::PrintHelp(result);
         }
+    }
+
+    template <typename CHAR>
+    std::optional<long long> Parser<CHAR>::ResultValueView::AsInteger(bool errorWhenTypeParingFails) const
+    {
+        using s = StringConsts;
+        long long v = 0;
+        long long base = 10;
+        bool neg = false;
+        int state = 0;
+        for (auto strIt = std::basic_string_view<CHAR>::cbegin(); strIt != std::basic_string_view<CHAR>::cend(); ++strIt)
+        {
+            char c = s::asChar(*strIt);
+            switch (state)
+            {
+                case 0:
+                    if (s::isspace(*strIt))
+                        continue;
+                    if (c == '+')
+                    {
+                        state = 1;
+                        continue;
+                    }
+                    if (c == '-')
+                    {
+                        state = 1;
+                        neg = true;
+                        continue;
+                    }
+                    // fall through
+                case 1:
+                    if (c == 'x' || c == 'X')
+                    {
+                        base = 16;
+                        state = 2;
+                        continue;
+                    }
+                    if (c == 'b' || c == 'B')
+                    {
+                        base = 2;
+                        state = 2;
+                        continue;
+                    }
+                    // fall through
+                case 2:
+                    if (c >= '0' && c <= '1')
+                    {
+                        v = v * base + static_cast<int>(c - '0');
+                        state = 2;
+                        continue;
+                    }
+                    if (base >= 10 && c >= '2' && c <= '9')
+                    {
+                        v = v * base + static_cast<int>(c - '0');
+                        state = 2;
+                        continue;
+                    }
+                    if (base == 16 && (c >= 'a' && c <= 'f'))
+                    {
+                        v = v * base + (10 + static_cast<int>(c - 'a'));
+                        state = 2;
+                        continue;
+                    }
+                    if (base == 16 && (c >= 'A' && c <= 'F'))
+                    {
+                        v = v * base + (10 + static_cast<int>(c - 'A'));
+                        state = 2;
+                        continue;
+                    }
+
+                    {
+                        std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                        msg += s::to_string(ResultValueView::GetPosition());
+                        msg += static_cast<CHAR>(':');
+                        msg += s::s;
+                        msg += s::errorParserUnexpectedCharAt;
+                        msg += s::to_string(1 + strIt - std::basic_string_view<CHAR>::cbegin());
+                        m_errorInfo->SetError(msg);
+                        return std::nullopt;
+                    }
+
+                default:
+                {
+                    std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                    msg += s::to_string(ResultValueView::GetPosition());
+                    msg += static_cast<CHAR>(':');
+                    msg += s::s;
+                    msg += s::errorGenericParserError;
+                    m_errorInfo->SetError(msg);
+                    return std::nullopt;
+                }
+            }
+        }
+
+        if (neg)
+        {
+            v = -v;
+        }
+        return v;
+    }
+
+    template <typename CHAR>
+    std::optional<double> Parser<CHAR>::ResultValueView::AsDouble(bool errorWhenTypeParingFails) const
+    {
+        // TODO: Implement
+        return std::nullopt;
+    }
+
+    template <typename CHAR>
+    std::optional<bool> Parser<CHAR>::ResultValueView::AsBool(bool errorWhenTypeParingFails) const
+    {
+        // TODO: Implement
+        return std::nullopt;
     }
 
 } // namespace yaclap
