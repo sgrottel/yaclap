@@ -18,13 +18,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         arch: [x64, x86]
-        compiler: [gcc, clang, msvc]
+        compiler: [g++, clang++, msvc]
         charset: [_Ansi, _Unicode]
         build_type: [Release, Debug]
 
         exclude:
           - os: windows-latest
-            compiler: gcc
+            compiler: g++
 
           - os: ubuntu-latest
             compiler: msvc
