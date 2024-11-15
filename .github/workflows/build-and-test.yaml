@@ -17,7 +17,7 @@ jobs:
 
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        arch: [x64, x86]
+        arch: [x64, Win32]
         compiler:
         - { "c": "gcc", "cpp": "g++"}
         - { "c": "clang", "cpp": "clang++"}
@@ -31,12 +31,16 @@ jobs:
 
           - os: ubuntu-latest
             compiler: { "c": "msvc", "cpp": "msvc"}
-            arch: x86
+          - os: ubuntu-latest
+            arch: Win32
+          - os: ubuntu-latest
             charset: _Unicode
 
           - os: macos-latest
             compiler: { "c": "msvc", "cpp": "msvc"}
-            arch: x86
+          - os: macos-latest
+            arch: Win32
+          - os: macos-latest
             charset: _Unicode
 
     runs-on: ${{ matrix.os }}
@@ -50,7 +54,7 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
         if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            echo "cmake_platform=\"-DCMAKE_GENERATOR_PLATFORM=${{ matrix.arch }}\"" >> "$GITHUB_OUTPUT"
+            echo "cmake_platform=-DCMAKE_GENERATOR_PLATFORM=${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
         else
             echo "cmake_platform=" >> "$GITHUB_OUTPUT"
         fi
