@@ -629,7 +629,10 @@ namespace yaclap
             /// </summary>
             inline void SetError(const CHAR* message, bool setUnsuccessful = true)
             {
-                m_error = message;
+                if (m_error.empty() && (message != nullptr || *message != static_cast<CHAR>(0)))
+                {
+                    m_error = message;
+                }
                 if (setUnsuccessful)
                 {
                     m_success = false;
@@ -662,6 +665,7 @@ namespace yaclap
             inline void SetSuccess()
             {
                 m_success = true;
+                m_error.clear();
             }
 
         private:
@@ -768,6 +772,25 @@ namespace yaclap
             }
 
         private:
+
+            inline auto GetStringTrimmed() const
+            {
+                auto b = std::basic_string_view<CHAR>::cbegin();
+                auto e = std::basic_string_view<CHAR>::cend();
+                while (b != e && StringConsts::isspace(*b))
+                {
+                    b++;
+                }
+                while (b != e)
+                {
+                    auto i = e - 1;
+                    if (i == b || !StringConsts::isspace(*i))
+                        break;
+                    e = i;
+                }
+                return std::make_pair(b, e);
+            }
+
             std::shared_ptr<ResultErrorInfo> m_errorInfo;
             std::optional<WithIdentity<CHAR>> m_source;
             int m_position;
@@ -1279,6 +1302,8 @@ namespace yaclap
         static constexpr char const* errorGenericParserError = "internal generic error";
         static constexpr char const* errorParserUnexpectedCharAt = "unexpected character at position ";
         static constexpr char const* errorContextSeparator = ": ";
+        static constexpr char const* errorMissingInput = "missing expected input";
+        static constexpr char const* errorUnexpectedInput = "unexpected input";
 
         static inline bool isspace(char c)
         {
@@ -1335,6 +1360,8 @@ namespace yaclap
         static constexpr wchar_t const* errorGenericParserError = L"internal generic error";
         static constexpr wchar_t const* errorParserUnexpectedCharAt = L"unexpected character at position ";
         static constexpr wchar_t const* errorContextSeparator = L": ";
+        static constexpr wchar_t const* errorMissingInput = L"missing expected input";
+        static constexpr wchar_t const* errorUnexpectedInput = L"unexpected input";
 
         static inline bool isspace(wchar_t c)
         {
@@ -1925,9 +1952,10 @@ namespace yaclap
         long long base = 10;
         bool neg = false;
         int state = 0;
-        // TODO: trailing whitespaces!
-        for (auto strIt = std::basic_string_view<CHAR>::cbegin(); strIt != std::basic_string_view<CHAR>::cend();
-             ++strIt)
+
+        auto strRange = ResultValueView::GetStringTrimmed();
+
+        for (auto strIt = strRange.first; strIt != strRange.second; ++strIt)
         {
             char c = s::asChar(*strIt);
             switch (state)
@@ -1946,7 +1974,7 @@ namespace yaclap
                         neg = true;
                         continue;
                     }
-                    // fall through
+                    [[fallthrough]];
                 case 1:
                     if (c == 'x' || c == 'X')
                     {
@@ -1960,7 +1988,7 @@ namespace yaclap
                         state = 2;
                         continue;
                     }
-                    // fall through
+                    [[fallthrough]];
                 case 2:
                     if (c >= '0' && c <= '1')
                     {
@@ -1992,10 +2020,10 @@ namespace yaclap
                         msg += s::to_string(ResultValueView::GetPosition());
                         msg += s::errorContextSeparator;
                         msg += s::errorParserUnexpectedCharAt;
-                        msg += s::to_string(1 + strIt - std::basic_string_view<CHAR>::cbegin());
+                        msg += s::to_string(1 + strIt - strRange.first);
                         m_errorInfo->SetError(msg);
-                        return std::nullopt;
                     }
+                    return std::nullopt;
 
                 default:
                 {
@@ -2004,9 +2032,19 @@ namespace yaclap
                     msg += s::errorContextSeparator;
                     msg += s::errorGenericParserError;
                     m_errorInfo->SetError(msg);
-                    return std::nullopt;
                 }
+                    return std::nullopt;
             }
+        }
+
+        if (state != 2)
+        {
+            std::basic_string<CHAR> msg{s::errorParserValueConversion};
+            msg += s::to_string(ResultValueView::GetPosition());
+            msg += s::errorContextSeparator;
+            msg += s::errorMissingInput;
+            m_errorInfo->SetError(msg);
+            return std::nullopt;
         }
 
         if (neg)
@@ -2017,14 +2055,59 @@ namespace yaclap
     }
 
     template <typename CHAR>
-    std::optional<double> Parser<CHAR>::ResultValueView::AsDouble(bool errorWhenTypeParingFails) const
+    std::optional<bool> Parser<CHAR>::ResultValueView::AsBool(bool errorWhenTypeParingFails) const
     {
-        // TODO: Implement
+        auto strRange = ResultValueView::GetStringTrimmed();
+
+        if (strRange.first == strRange.second)
+        {
+            std::basic_string<CHAR> msg{StringConsts::errorParserValueConversion};
+            msg += StringConsts::to_string(ResultValueView::GetPosition());
+            msg += StringConsts::errorContextSeparator;
+            msg += StringConsts::errorMissingInput;
+            m_errorInfo->SetError(msg);
+            return std::nullopt;
+        }
+
+        if (strRange.second - strRange.first <= 5)
+        {
+            // possibly a key word
+            int len = static_cast<int>(strRange.second - strRange.first);
+            char s[5]{0, 0, 0, 0, 0};
+            for (int i = 0; i < len; ++i)
+            {
+                s[i] = static_cast<char>(std::tolower(StringConsts::asChar(*(strRange.first + i))));
+            }
+
+            if (memcmp(s, "true", 4) == 0 || memcmp(s, "t", 1) == 0 || memcmp(s, "on", 2) == 0 ||
+                memcmp(s, "yes", 3) == 0 || memcmp(s, "y", 1) == 0)
+            {
+                return true;
+            }
+            if (memcmp(s, "false", 5) == 0 || memcmp(s, "f", 1) == 0 || memcmp(s, "off", 3) == 0 ||
+                memcmp(s, "no", 2) == 0 || memcmp(s, "n", 1) == 0)
+            {
+                return false;
+            }
+        }
+
+        auto intVal = ResultValueView::AsInteger(errorWhenTypeParingFails);
+        if (intVal.has_value())
+        {
+            return intVal.value() != 0;
+        }
+
+        std::basic_string<CHAR> msg{StringConsts::errorParserValueConversion};
+        msg += StringConsts::to_string(ResultValueView::GetPosition());
+        msg += StringConsts::errorContextSeparator;
+        msg += StringConsts::errorUnexpectedInput;
+        m_errorInfo->SetError(msg);
+
         return std::nullopt;
     }
 
     template <typename CHAR>
-    std::optional<bool> Parser<CHAR>::ResultValueView::AsBool(bool errorWhenTypeParingFails) const
+    std::optional<double> Parser<CHAR>::ResultValueView::AsDouble(bool errorWhenTypeParingFails) const
     {
         // TODO: Implement
         return std::nullopt;
