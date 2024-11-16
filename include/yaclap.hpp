@@ -1961,8 +1961,6 @@ namespace yaclap
             switch (state)
             {
                 case 0:
-                    if (s::isspace(*strIt))
-                        continue;
                     if (c == '+')
                     {
                         state = 1;
@@ -2109,7 +2107,50 @@ namespace yaclap
     template <typename CHAR>
     std::optional<double> Parser<CHAR>::ResultValueView::AsDouble(bool errorWhenTypeParingFails) const
     {
+        bool negVal = false;
+        long long fullVal = 0;
+        long long fracVal = 0;
+        long long fracWidth = 1;
+        bool negExp = false;
+        long expVal = 0;
+        int state = 0;
+
+        auto strRange = ResultValueView::GetStringTrimmed();
+
         // TODO: Implement
+        //   [+-]?[0..9]*\.?[0..9]*([eE][+-]?[0..9]+)?
+
+        for (auto strIt = strRange.first; strIt != strRange.second; ++strIt)
+        {
+            char c = s::asChar(*strIt);
+            switch (state)
+            {
+                // TODO: Implement
+
+                default:
+                {
+                    std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                    msg += s::to_string(ResultValueView::GetPosition());
+                    msg += s::errorContextSeparator;
+                    msg += s::errorGenericParserError;
+                    m_errorInfo->SetError(msg);
+                }
+                    return std::nullopt;
+            }
+        }
+
+        if (state != 42) // TODO: check for valid finishing states
+        {
+            std::basic_string<CHAR> msg{s::errorParserValueConversion};
+            msg += s::to_string(ResultValueView::GetPosition());
+            msg += s::errorContextSeparator;
+            msg += s::errorMissingInput;
+            m_errorInfo->SetError(msg);
+            return std::nullopt;
+        }
+
+        // TODO: Implement
+
         return std::nullopt;
     }
 

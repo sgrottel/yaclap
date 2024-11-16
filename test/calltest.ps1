@@ -36,6 +36,10 @@ $tests =
 	@{
 		"args" = @("B", "and", "--", "--value", "5");
 		"regs" = @("^::::oB0_0_0_f_a$", "^Unmatched arguments: 2$", "^\s*unmatched> --value$", "^\s*unmatched> 5$", "^and$");
+	},
+	@{
+		"args" = @("B", "and", "--value", "`"-b110 `"", "--double", "-314.1e-2", "--bool", "`" true `"");
+		"regs" = @("^::::oB0_-6_(.+)_t_a$"); # TODO: parsed double output
 	}
 );
 
