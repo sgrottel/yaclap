@@ -38,10 +38,13 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstring>
 #include <cwctype>
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <limits>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -2127,13 +2130,13 @@ namespace yaclap
                 s[i] = static_cast<char>(std::tolower(StringConsts::asChar(*(strRange.first + i))));
             }
 
-            if (memcmp(s, "true", 4) == 0 || memcmp(s, "t", 1) == 0 || memcmp(s, "on", 2) == 0 ||
-                memcmp(s, "yes", 3) == 0 || memcmp(s, "y", 1) == 0)
+            if (std::memcmp(s, "true", 4) == 0 || std::memcmp(s, "t", 1) == 0 || std::memcmp(s, "on", 2) == 0 ||
+                std::memcmp(s, "yes", 3) == 0 || std::memcmp(s, "y", 1) == 0)
             {
                 return true;
             }
-            if (memcmp(s, "false", 5) == 0 || memcmp(s, "f", 1) == 0 || memcmp(s, "off", 3) == 0 ||
-                memcmp(s, "no", 2) == 0 || memcmp(s, "n", 1) == 0)
+            if (std::memcmp(s, "false", 5) == 0 || std::memcmp(s, "f", 1) == 0 || std::memcmp(s, "off", 3) == 0 ||
+                std::memcmp(s, "no", 2) == 0 || std::memcmp(s, "n", 1) == 0)
             {
                 return false;
             }
