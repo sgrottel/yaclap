@@ -1304,6 +1304,7 @@ namespace yaclap
         static constexpr char const* errorContextSeparator = ": ";
         static constexpr char const* errorMissingInput = "missing expected input";
         static constexpr char const* errorUnexpectedInput = "unexpected input";
+        static constexpr char const* errorDataTypeLimit = "value exceeds supported data type limit";
 
         static inline bool isspace(char c)
         {
@@ -1362,6 +1363,7 @@ namespace yaclap
         static constexpr wchar_t const* errorContextSeparator = L": ";
         static constexpr wchar_t const* errorMissingInput = L"missing expected input";
         static constexpr wchar_t const* errorUnexpectedInput = L"unexpected input";
+        static constexpr wchar_t const* errorDataTypeLimit = L"value exceeds supported data type limit";
 
         static inline bool isspace(wchar_t c)
         {
@@ -1947,11 +1949,20 @@ namespace yaclap
     template <typename CHAR>
     std::optional<long long> Parser<CHAR>::ResultValueView::AsInteger(bool errorWhenTypeParingFails) const
     {
+        long long limit = (std::numeric_limits<long long>::max)() / 10;
+
         using s = StringConsts;
         long long v = 0;
         long long base = 10;
         bool neg = false;
-        int state = 0;
+
+        enum class State
+        {
+            SignPrefixOrValue = 0,
+            PrefixOrValue = 1,
+            Value = 2
+        };
+        State state = State::SignPrefixOrValue;
 
         auto strRange = ResultValueView::GetStringTrimmed();
 
@@ -1960,68 +1971,97 @@ namespace yaclap
             char c = s::asChar(*strIt);
             switch (state)
             {
-                case 0:
+                case State::SignPrefixOrValue:
                     if (c == '+')
                     {
-                        state = 1;
+                        state = State::PrefixOrValue;
                         continue;
                     }
                     if (c == '-')
                     {
-                        state = 1;
+                        state = State::PrefixOrValue;
                         neg = true;
                         continue;
                     }
                     [[fallthrough]];
-                case 1:
+                case State::PrefixOrValue:
                     if (c == 'x' || c == 'X')
                     {
                         base = 16;
-                        state = 2;
+                        limit = (std::numeric_limits<long long>::max)() / 16;
+                        state = State::Value;
                         continue;
                     }
                     if (c == 'b' || c == 'B')
                     {
                         base = 2;
-                        state = 2;
+                        limit = (std::numeric_limits<long long>::max)() / 2;
+                        state = State::Value;
                         continue;
                     }
                     [[fallthrough]];
-                case 2:
+                case State::Value:
                     if (c >= '0' && c <= '1')
                     {
+                        if (v >= limit)
+                        {
+                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                            msg += s::to_string(ResultValueView::GetPosition());
+                            msg += s::errorContextSeparator;
+                            msg += s::errorDataTypeLimit;
+                            m_errorInfo->SetError(msg);
+                            return std::nullopt;
+                        }
                         v = v * base + static_cast<int>(c - '0');
-                        state = 2;
+                        state = State::Value;
                         continue;
                     }
                     if (base >= 10 && c >= '2' && c <= '9')
                     {
+                        if (v >= limit)
+                        {
+                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                            msg += s::to_string(ResultValueView::GetPosition());
+                            msg += s::errorContextSeparator;
+                            msg += s::errorDataTypeLimit;
+                            m_errorInfo->SetError(msg);
+                            return std::nullopt;
+                        }
                         v = v * base + static_cast<int>(c - '0');
-                        state = 2;
+                        state = State::Value;
                         continue;
                     }
                     if (base == 16 && (c >= 'a' && c <= 'f'))
                     {
+                        if (v >= limit)
+                        {
+                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                            msg += s::to_string(ResultValueView::GetPosition());
+                            msg += s::errorContextSeparator;
+                            msg += s::errorDataTypeLimit;
+                            m_errorInfo->SetError(msg);
+                            return std::nullopt;
+                        }
                         v = v * base + (10 + static_cast<int>(c - 'a'));
-                        state = 2;
+                        state = State::Value;
                         continue;
                     }
                     if (base == 16 && (c >= 'A' && c <= 'F'))
                     {
+                        if (v >= limit)
+                        {
+                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                            msg += s::to_string(ResultValueView::GetPosition());
+                            msg += s::errorContextSeparator;
+                            msg += s::errorDataTypeLimit;
+                            m_errorInfo->SetError(msg);
+                            return std::nullopt;
+                        }
                         v = v * base + (10 + static_cast<int>(c - 'A'));
-                        state = 2;
+                        state = State::Value;
                         continue;
                     }
-
-                    {
-                        std::basic_string<CHAR> msg{s::errorParserValueConversion};
-                        msg += s::to_string(ResultValueView::GetPosition());
-                        msg += s::errorContextSeparator;
-                        msg += s::errorParserUnexpectedCharAt;
-                        msg += s::to_string(1 + strIt - strRange.first);
-                        m_errorInfo->SetError(msg);
-                    }
-                    return std::nullopt;
+                    break;
 
                 default:
                 {
@@ -2033,9 +2073,19 @@ namespace yaclap
                 }
                     return std::nullopt;
             }
+
+            {
+                std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                msg += s::to_string(ResultValueView::GetPosition());
+                msg += s::errorContextSeparator;
+                msg += s::errorParserUnexpectedCharAt;
+                msg += s::to_string(1 + strIt - strRange.first);
+                m_errorInfo->SetError(msg);
+            }
+            return std::nullopt;
         }
 
-        if (state != 2)
+        if (state != State::Value)
         {
             std::basic_string<CHAR> msg{s::errorParserValueConversion};
             msg += s::to_string(ResultValueView::GetPosition());
@@ -2107,25 +2157,124 @@ namespace yaclap
     template <typename CHAR>
     std::optional<double> Parser<CHAR>::ResultValueView::AsDouble(bool errorWhenTypeParingFails) const
     {
+        using s = StringConsts;
+
+        constexpr const long long limit = (std::numeric_limits<long long>::max)() / 10;
+
         bool negVal = false;
         long long fullVal = 0;
         long long fracVal = 0;
         long long fracWidth = 1;
         bool negExp = false;
         long expVal = 0;
-        int state = 0;
+
+        // [+-]?[0..9]*\.?[0..9]*([eE][+-]?[0..9]+)?
+        // 0    1         2           3    4
+        enum class State
+        {
+            SignOrFullVal = 0,
+            FullVal = 1,
+            FracVal = 2,
+            ExpSignOrVal = 3,
+            ExpVal = 4
+        };
+        State state = State::SignOrFullVal;
 
         auto strRange = ResultValueView::GetStringTrimmed();
-
-        // TODO: Implement
-        //   [+-]?[0..9]*\.?[0..9]*([eE][+-]?[0..9]+)?
 
         for (auto strIt = strRange.first; strIt != strRange.second; ++strIt)
         {
             char c = s::asChar(*strIt);
             switch (state)
             {
-                // TODO: Implement
+                case State::SignOrFullVal:
+                    if (c == '+')
+                    {
+                        state = State::FullVal;
+                        continue;
+                    }
+                    if (c == '-')
+                    {
+                        negVal = true;
+                        state = State::FullVal;
+                        continue;
+                    }
+                    [[fallthrough]];
+                case State::FullVal:
+                    if (c >= '0' && c <= '9')
+                    {
+                        if (fullVal >= limit)
+                        {
+                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                            msg += s::to_string(ResultValueView::GetPosition());
+                            msg += s::errorContextSeparator;
+                            msg += s::errorDataTypeLimit;
+                            m_errorInfo->SetError(msg);
+                            return std::nullopt;
+                        }
+                        state = State::FullVal;
+                        fullVal *= 10;
+                        fullVal += c - '0';
+                        continue;
+                    }
+                    if (c == '.')
+                    {
+                        state = State::FracVal;
+                        continue;
+                    }
+                    if (c == 'e' || c == 'E')
+                    {
+                        state = State::ExpSignOrVal;
+                        continue;
+                    }
+                    break;
+                case State::FracVal:
+                    if (c >= '0' && c <= '9')
+                    {
+                        if (fracVal < limit)
+                        {
+                            fracWidth *= 10;
+                            fracVal *= 10;
+                            fracVal += c - '0';
+                        }
+                        continue;
+                    }
+                    if (c == 'e' || c == 'E')
+                    {
+                        state = State::ExpSignOrVal;
+                        continue;
+                    }
+                    break;
+                case State::ExpSignOrVal:
+                    if (c == '+')
+                    {
+                        state = State::ExpVal;
+                        continue;
+                    }
+                    if (c == '-')
+                    {
+                        negExp = true;
+                        state = State::ExpVal;
+                        continue;
+                    }
+                    [[fallthrough]];
+                case State::ExpVal:
+                    if (c >= '0' && c <= '9')
+                    {
+                        if (expVal >= limit)
+                        {
+                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                            msg += s::to_string(ResultValueView::GetPosition());
+                            msg += s::errorContextSeparator;
+                            msg += s::errorDataTypeLimit;
+                            m_errorInfo->SetError(msg);
+                            return std::nullopt;
+                        }
+                        expVal *= 10;
+                        expVal += c - '0';
+                        continue;
+                    }
+                    break;
 
                 default:
                 {
@@ -2137,9 +2286,19 @@ namespace yaclap
                 }
                     return std::nullopt;
             }
+
+            {
+                std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                msg += s::to_string(ResultValueView::GetPosition());
+                msg += s::errorContextSeparator;
+                msg += s::errorParserUnexpectedCharAt;
+                msg += s::to_string(1 + strIt - strRange.first);
+                m_errorInfo->SetError(msg);
+            }
+            return std::nullopt;
         }
 
-        if (state != 42) // TODO: check for valid finishing states
+        if (state < State::FullVal || state > State::ExpVal)
         {
             std::basic_string<CHAR> msg{s::errorParserValueConversion};
             msg += s::to_string(ResultValueView::GetPosition());
@@ -2149,9 +2308,13 @@ namespace yaclap
             return std::nullopt;
         }
 
-        // TODO: Implement
+        double d = static_cast<double>(fullVal) + static_cast<double>(fracVal) / static_cast<double>(fracWidth);
+        const double e = std::pow(10.0, static_cast<double>(negExp ? -expVal : expVal));
+        d *= e;
+        if (negVal)
+            d = -d;
 
-        return std::nullopt;
+        return d;
     }
 
 } // namespace yaclap
