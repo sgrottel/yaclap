@@ -27,8 +27,14 @@ struct Config
     // input for command A
     const _TCHAR* m_input = nullptr;
 
-    // value for command B
-    int m_value = 0;
+    // integer value for command B
+    long long m_intValue = 0;
+
+    // double value for command B
+    double m_doubleValue = 0.0;
+
+    // bool value for command B
+    bool m_boolValue = false;
 
     // an additional, positional argument for command B
     std::basic_string<_TCHAR> m_andArg;
@@ -36,5 +42,4 @@ struct Config
     bool ParseCmdLine(int argc, const _TCHAR* const* argv);
 
     void PrintVersionInfo();
-
 };

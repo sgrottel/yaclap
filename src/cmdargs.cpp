@@ -54,13 +54,17 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
         .AddAlias(_T("A"))
         .Add(inputOption);
 
-    Option valueOption{
+    Option intValueOption{
         {_T("--value"), StringCompare::CaseInsensitive},
         std::basic_string<_TCHAR>(_T("int")),
         _T("The value option is an int. If specified multiple times, the values will be summarized.")};
-    valueOption
+    intValueOption
         .AddAlias(_T("-V"))
         .AddAlias(_T("/V"));
+
+    Option doubleValueOption{_T("--double"), _T("dval"), _T("A double-precision float value. Must not be specified more than once.")};
+
+    Option boolValueOption{_T("--bool"), _T("bval"), _T("A boolean value. Must not be specified more than once.")};
 
     // An Argument is a named placeholder for a command line argument not matched otherwise as Command, Option, or
     // Switch. These are usually required input for specific commands.
@@ -86,7 +90,9 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
     commandB
         .AddAlias({_T("CmdB"), StringCompare::CaseInsensitive})
         .AddAlias(_T("B"))
-        .Add(valueOption)
+        .Add(intValueOption)
+        .Add(doubleValueOption)
+        .Add(boolValueOption)
         .Add(andArgument)
         .Add(orArgument);
 
@@ -125,34 +131,34 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
     {
         // This assignment is ok.
         // Because the input strings are always handled as string_views, the pointer returned from
-        // `inputValue.value().data()` here is a pointer into the original command line argument strings.
-        m_input = inputValue.value().data();
+        // `inputValue.data()` here is a pointer into the original command line argument strings.
+        m_input = inputValue.data();
     }
 
-    m_value = 0;
-    for (std::basic_string_view<_TCHAR> const& s : res.GetOptionValues(valueOption))
+    m_intValue = 0;
+    // if multiple occurances are allowed, iterate through all ...
+    for (Parser::ResultValueView const& s : res.GetOptionValues(intValueOption))
     {
-#ifdef _WIN32
-        _TCHAR* end = nullptr;
-        long v = _tcstol(s.data(), &end, 10);
-#else
-        size_t endPos = 0;
-        long v = std::stol(s.data(), &endPos, 10);
-        const _TCHAR* end = s.data() + endPos;
-#endif
-           
-        if (v == 0)
+        // ... cast to type if you need to, which will also set an error message if it fails, ...
+        auto intVal = s.AsInteger();
+        // ... and if the optional has a value ...
+        if (intVal.has_value())
         {
-            // might be the value zero, or an indication that the conversion failed
-            if (end == s.data())
-            {
-                res.SetError(std::basic_string<_TCHAR>{_T("Failed to parse an option value as int: ")} + s.data() +
-                             _T(" [Option: ") + valueOption.NameAliasBegin()->GetName() + _T("]"));
-                continue;
-            }
+            // ... handle it, e.g. by adding.
+            m_intValue += intVal.value();
         }
-        m_value += v;
     }
+
+    // Or, if only one occurance is allowed, fetch that value (or set an error), cast if needed, and check the returned
+    // optional, and assign it's value if present
+    auto dValOpt = res.GetOptionValue(doubleValueOption, Parser::Result::ErrorIfMultiple).AsDouble();
+    if (dValOpt)
+    {
+        m_doubleValue = dValOpt.value();
+    }
+
+    // ... or always assign value of optional or default.
+    m_boolValue = res.GetOptionValue(boolValueOption, Parser::Result::ErrorIfMultiple).AsBool().value_or(false);
 
     // Switch
     // which can be specified multiple times:
@@ -162,7 +168,7 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
     // the typical case:
     auto andValue = res.GetArgument(andArgument);
     if (andValue)
-        m_andArg = andValue.value();
+        m_andArg = andValue;
 
     // the special case, with some value computation code:
     auto orValue = res.GetArgument(orArgument);
@@ -171,7 +177,7 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
         if (!m_andArg.empty())
             m_andArg += _T(" ");
         m_andArg += _T("| ");
-        m_andArg += orValue.value();
+        m_andArg += orValue;
     }
 
     // In this test application, we report unmatched arguments:

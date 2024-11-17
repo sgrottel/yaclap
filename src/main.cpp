@@ -27,17 +27,16 @@ int main(int argc, char* argv[])
 
     std::wcout << L"::info::"
 #if defined(DEBUG) || defined(_DEBUG)
-              << L"DEBUG:"
+               << L"DEBUG:"
 #else
-              << L"RELEASE:"
+               << L"RELEASE:"
 #endif
 #if defined(NDEBUG)
-              << L"NDEBUG:"
+               << L"NDEBUG:"
 #else
-              << L":"
+               << L":"
 #endif
-              << (sizeof(void*) * 8) << L":"
-              << sizeof(_TCHAR) << L"\n";
+               << (sizeof(void*) * 8) << L":" << sizeof(_TCHAR) << L"\n";
     cfg.PrintVersionInfo();
 
     std::wcout << L"::::";
@@ -59,8 +58,9 @@ int main(int argc, char* argv[])
                 std::wcout << L"x";
                 break;
         }
-        std::wcout << cfg.m_verbose << ((cfg.m_input != nullptr) ? L"i" : L"_") << cfg.m_value
-                  << ((!cfg.m_andArg.empty()) ? L"a" : L"_");
+        std::wcout << cfg.m_verbose << ((cfg.m_input != nullptr) ? L"i" : L"_") << cfg.m_intValue << L"_"
+                   << cfg.m_doubleValue << L"_" << (cfg.m_boolValue ? L"t" : L"f") << L"_"
+                   << ((!cfg.m_andArg.empty()) ? L"a" : L"_");
         if (cfg.m_input != nullptr)
         {
             std::wcout << L"\n" << cfg.m_input;

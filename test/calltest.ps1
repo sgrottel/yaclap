@@ -19,11 +19,11 @@ $tests =
 @(
 	@{
 		"args"= @("cmda","-i","whateff.txt","-v","-v");
-		"regs" = @("^::::oA2i0_$", "^whateff\.txt$");
+		"regs" = @("^::::oA2i0_0_f__$", "^whateff\.txt$");
 	},
 	@{
 		"args" = @("B","/V","42","-v","-v","-v","and");
-		"regs" = @("^::::oB3_42a$", "^and$");
+		"regs" = @("^::::oB3_42_0_f_a$", "^and$");
 	},
 	@{
 		"args" = @("--help");
@@ -31,11 +31,15 @@ $tests =
 	},
 	@{
 		"args" = @("B","/V","7","and","or");
-		"regs" = @("^::::oB0_7a$", "^and | or$");
+		"regs" = @("^::::oB0_7_0_f_a$", "^and | or$");
 	},
 	@{
 		"args" = @("B", "and", "--", "--value", "5");
-		"regs" = @("^::::oB0_0a$", "^Unmatched arguments: 2$", "^\s*unmatched> --value$", "^\s*unmatched> 5$", "^and$");
+		"regs" = @("^::::oB0_0_0_f_a$", "^Unmatched arguments: 2$", "^\s*unmatched> --value$", "^\s*unmatched> 5$", "^and$");
+	},
+	@{
+		"args" = @("B", "and", "--value", "-b110 ", "--double", "314.159265e-2", "--bool", " true ");
+		"regs" = @("^::::oB0_-6_3\.141[0-9]*_t_a$");
 	}
 );
 
