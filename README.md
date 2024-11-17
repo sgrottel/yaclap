@@ -19,13 +19,15 @@ This command line parser is inspired by the [POSIX standard](https://en.wikipedi
 - `--` the double-dash token stops the parsing and will return all following arguments as _unmatched_
 - Automatic `--help` documentation generation is supported
 - Option-argument delimiters are supported: ` ` (space), `=`, and `:`
-- Supports case-sensitive and case-insensitive matching of names for 
+- Supports case-sensitive and case-insensitive matching of names of Options and Switches
+- Supports basic value conversion of Option values and Argument values to basic types:
+  long integer numbers, double-precision floating-point numbers, and boolean values
 
 **Not Supported**
 
-- Arguments type conversion, matching, and validation are not handled by this library!
-  - All argument values are returned as the original input strings.
-    Further parsing, type conversion and validation is up to the application.
+- Input value validation, e.g. integer range check or string to keyword matching, is not supported by this library
+- Complex value type conversion and validation is not supported by this library
+  - Fetch arguments as strings and convert and validate the input with you own code.
   - There are utility functions to inject error messages into the parser output.
 - Option prefixes, `-`, `--`, and `/`, are part of the Option's name, and have no further special meaning
 - Automatic aliasing, e.g. shortening option names, is not supported
