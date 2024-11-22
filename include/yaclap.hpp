@@ -214,13 +214,13 @@ namespace yaclap
     };
 
     template <typename CHAR>
-    class WithDesciption
+    class WithDescription
     {
     protected:
-        WithDesciption() noexcept = default;
+        WithDescription() noexcept = default;
 
         template <typename TSTR>
-        WithDesciption(const TSTR& description)
+        WithDescription(const TSTR& description)
             : m_desc{description}
         {
         }
@@ -288,7 +288,7 @@ namespace yaclap
     uint32_t WithIdentity<CHAR>::c_nextId = 1;
 
     template <typename CHAR>
-    class Argument : public WithIdentity<CHAR>, public WithName<CHAR>, public WithDesciption<CHAR>
+    class Argument : public WithIdentity<CHAR>, public WithName<CHAR>, public WithDescription<CHAR>
     {
     public:
         static constexpr bool NotRequired = false;
@@ -297,7 +297,7 @@ namespace yaclap
 
         template <typename TSTR1, typename TSTR2>
         explicit Argument(const TSTR1& name, const TSTR2& description, bool isRequired = true)
-            : WithName<CHAR>{name}, WithDesciption<CHAR>{description}, m_isRequired{isRequired}
+            : WithName<CHAR>{name}, WithDescription<CHAR>{description}, m_isRequired{isRequired}
         {
         }
 
@@ -311,14 +311,14 @@ namespace yaclap
     };
 
     template <typename CHAR>
-    class Option : public WithIdentity<CHAR>, public WithNameAndAlias<CHAR>, public WithDesciption<CHAR>
+    class Option : public WithIdentity<CHAR>, public WithNameAndAlias<CHAR>, public WithDescription<CHAR>
     {
     public:
         Option() noexcept = default;
 
         template <typename TSTR1, typename TSTR2>
         explicit Option(const Alias<CHAR>& name, const TSTR1& argumentName, const TSTR2& description)
-            : WithNameAndAlias<CHAR>{name}, WithDesciption<CHAR>{description}, m_argName{argumentName}
+            : WithNameAndAlias<CHAR>{name}, WithDescription<CHAR>{description}, m_argName{argumentName}
         {
         }
 
@@ -364,14 +364,14 @@ namespace yaclap
     };
 
     template <typename CHAR>
-    class Switch : public WithIdentity<CHAR>, public WithNameAndAlias<CHAR>, public WithDesciption<CHAR>
+    class Switch : public WithIdentity<CHAR>, public WithNameAndAlias<CHAR>, public WithDescription<CHAR>
     {
     public:
         Switch() noexcept = default;
 
         template <typename TSTR>
         explicit Switch(const Alias<CHAR>& name, const TSTR& description)
-            : WithNameAndAlias<CHAR>{name}, WithDesciption<CHAR>{description}
+            : WithNameAndAlias<CHAR>{name}, WithDescription<CHAR>{description}
         {
         }
 
@@ -464,14 +464,14 @@ namespace yaclap
     class Command : public WithIdentity<CHAR>,
                     public WithCommandContainer<CHAR>,
                     public WithNameAndAlias<CHAR>,
-                    public WithDesciption<CHAR>
+                    public WithDescription<CHAR>
     {
     public:
         Command() noexcept = default;
 
         template <typename TSTR>
         Command(const Alias<CHAR>& name, const TSTR& description)
-            : WithCommandContainer<CHAR>{}, WithNameAndAlias<CHAR>{name}, WithDesciption<CHAR>{description}
+            : WithCommandContainer<CHAR>{}, WithNameAndAlias<CHAR>{name}, WithDescription<CHAR>{description}
         {
         }
 
@@ -535,12 +535,12 @@ namespace yaclap
     }
 
     template <typename CHAR>
-    class Parser : public WithCommandContainer<CHAR>, public WithName<CHAR>, public WithDesciption<CHAR>
+    class Parser : public WithCommandContainer<CHAR>, public WithName<CHAR>, public WithDescription<CHAR>
     {
     public:
         template <typename TSTR1, typename TSTR2>
         Parser(const TSTR1& name, const TSTR2& description)
-            : WithCommandContainer<CHAR>{}, WithName<CHAR>{name}, WithDesciption<CHAR>{description}
+            : WithCommandContainer<CHAR>{}, WithName<CHAR>{name}, WithDescription<CHAR>{description}
         {
         }
 
@@ -776,7 +776,6 @@ namespace yaclap
             }
 
         private:
-
             inline auto GetStringTrimmed() const
             {
                 auto b = std::basic_string_view<CHAR>::cbegin();
@@ -1430,8 +1429,8 @@ namespace yaclap
         }
         width--; // reserve last column to host an explicit new line
 
-        WithDesciption<CHAR> const* desc = (command == nullptr) ? static_cast<WithDesciption<CHAR> const*>(this)
-                                                                : static_cast<WithDesciption<CHAR> const*>(command);
+        WithDescription<CHAR> const* desc = (command == nullptr) ? static_cast<WithDescription<CHAR> const*>(this)
+                                                                 : static_cast<WithDescription<CHAR> const*>(command);
         if (!desc->GetDescription().empty())
         {
             stream << s::descriptionCaption << s::nl;
