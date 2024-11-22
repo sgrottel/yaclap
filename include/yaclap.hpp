@@ -106,14 +106,18 @@ namespace yaclap
         bool IsMatch(const std::basic_string_view<CHAR, T>& s) const
         {
             if (s.size() != m_name.size())
+            {
                 return false;
+            }
 
             if (m_stringCompare == StringCompare::CaseInsensitive)
             {
                 for (size_t i = 0; i < s.size(); ++i)
                 {
                     if (!AreCharEqualCaseInsenstive(m_name[i], s[i]))
+                    {
                         return false;
+                    }
                 }
                 return true;
             }
@@ -121,7 +125,9 @@ namespace yaclap
             for (size_t i = 0; i < s.size(); ++i)
             {
                 if (m_name[i] != s[i])
+                {
                     return false;
+                }
             }
             return true;
         }
@@ -159,7 +165,9 @@ namespace yaclap
         void AddAliasImpl(const Alias<CHAR>& alias)
         {
             if (alias.GetName().empty())
+            {
                 throw std::invalid_argument("alias");
+            }
             m_names.push_back(alias);
         }
 
@@ -182,7 +190,9 @@ namespace yaclap
             for (Alias<CHAR> const& a : m_names)
             {
                 if (a.IsMatch(s))
+                {
                     return true;
+                }
             }
             return false;
         }
@@ -342,11 +352,15 @@ namespace yaclap
             {
                 size_t nameLen = a->GetName().size();
                 if (nameLen >= s.size())
+                {
                     return false;
+                }
                 // space char is part of the separated, in case option name and value were escaped together as one
                 // argument
                 if (s[nameLen] != ':' && s[nameLen] != ' ' && s[nameLen] != '=')
+                {
                     return false;
+                }
                 std::basic_string_view<CHAR> sub{s.data(), nameLen};
 
                 if (a->IsMatch(sub))
@@ -396,14 +410,18 @@ namespace yaclap
         void AddOptionImpl(const Option<CHAR>& option)
         {
             if (option.NameAliasBegin() == option.NameAliasEnd())
+            {
                 throw std::invalid_argument("option");
+            }
             m_options.push_back(option);
         }
 
         void AddSwitchImpl(const Switch<CHAR>& switchOption)
         {
             if (switchOption.NameAliasBegin() == switchOption.NameAliasEnd())
+            {
                 throw std::invalid_argument("switchOption");
+            }
             m_switches.push_back(switchOption);
         }
 
@@ -530,7 +548,9 @@ namespace yaclap
     void WithCommandContainer<CHAR>::AddCommandImpl(const Command<CHAR>& command)
     {
         if (command.NameAliasBegin() == command.NameAliasEnd())
+        {
             throw std::invalid_argument("command");
+        }
         m_commands.push_back(command);
     }
 
@@ -788,7 +808,9 @@ namespace yaclap
                 {
                     auto i = e - 1;
                     if (i == b || !StringConsts::isspace(*i))
+                    {
                         break;
+                    }
                     e = i;
                 }
                 return std::make_pair(b, e);
@@ -877,7 +899,9 @@ namespace yaclap
                 for (auto const& cmdId : m_commands)
                 {
                     if (WithIdentity<CHAR>::Equals(cmdId, cmd))
+                    {
                         return true;
+                    }
                 }
                 return false;
             }
@@ -1168,7 +1192,9 @@ namespace yaclap
     void Parser<CHAR>::Result::PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, bool tryUseColor) const
     {
         if (Result::m_errorInfo->GetError().empty())
+        {
             return;
+        }
 
         bool useColor = false;
 #ifdef _WIN32
@@ -1189,10 +1215,14 @@ namespace yaclap
         }
 #endif
         if (useColor)
+        {
             stream << "\x1B[91m\x1B[40m";
+        }
         stream << m_errorInfo->GetError();
         if (useColor)
+        {
             stream << "\x1B[0m";
+        }
         stream << "\n";
     }
 
@@ -1542,7 +1572,9 @@ namespace yaclap
         for (Argument<CHAR> const* arg : allArguments)
         {
             if (!arg->IsRequired())
+            {
                 continue;
+            }
             auto const& n = arg->GetName();
             optionalLineBreak(n.size() + 3);
             stream << s::s << s::ob << n << s::cb;
@@ -1558,7 +1590,9 @@ namespace yaclap
         auto printAndCountSpaces = [&stream](size_t& counter, size_t count)
         {
             if (count <= 0)
+            {
                 return;
+            }
             stream << std::setfill(s::s) << std::setw(count) << s::s;
             counter += count;
         };
@@ -1817,7 +1851,9 @@ namespace yaclap
                 pendingOption = nullptr;
             }
             if (handled)
+            {
                 continue;
+            }
 
             for (Command<CHAR> const* cmd : allCommands)
             {
@@ -1836,7 +1872,9 @@ namespace yaclap
                 }
             }
             if (handled)
+            {
                 continue;
+            }
 
             for (Option<CHAR> const* opt : allOptions)
             {
@@ -1855,7 +1893,9 @@ namespace yaclap
                 }
             }
             if (handled)
+            {
                 continue;
+            }
             for (Switch<CHAR> const* swt : allSwitches)
             {
                 if (swt->IsMatch(arg))
@@ -1873,7 +1913,9 @@ namespace yaclap
                 }
             }
             if (handled)
+            {
                 continue;
+            }
 
             if (!allArguments.empty())
             {
@@ -1883,7 +1925,9 @@ namespace yaclap
                 allArguments.erase(allArguments.begin());
             }
             if (handled)
+            {
                 continue;
+            }
 
             res.AddUnmatchedArgument(ResultValueViewImpl{arg, res.GetErrorInfo(), std::nullopt, argi});
         }
@@ -2315,7 +2359,9 @@ namespace yaclap
         const double e = std::pow(10.0, static_cast<double>(negExp ? -expVal : expVal));
         d *= e;
         if (negVal)
+        {
             d = -d;
+        }
 
         return d;
     }
