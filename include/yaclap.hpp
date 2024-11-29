@@ -30,7 +30,7 @@
 
 // yaclap semantic version: MAJOR.MINOR.PATCH(.BUILD)
 #define YACLAP_VERSION_MAJOR 0
-#define YACLAP_VERSION_MINOR 2
+#define YACLAP_VERSION_MINOR 3
 #define YACLAP_VERSION_PATCH 0
 #define YACLAP_VERSION_BUILD 0
 
@@ -171,6 +171,11 @@ namespace yaclap
             m_names.push_back(alias);
         }
 
+        void SetHideFromHelpImpl() noexcept
+        {
+            m_hideFromHelp = true;
+        }
+
     public:
         inline typename std::vector<Alias<CHAR>>::const_iterator NameAliasBegin() const
         {
@@ -197,8 +202,14 @@ namespace yaclap
             return false;
         }
 
+        inline bool DoesHideFromHelp() const noexcept
+        {
+            return m_hideFromHelp;
+        }
+
     private:
         std::vector<Alias<CHAR>> m_names;
+        bool m_hideFromHelp{false};
     };
 
     template <typename CHAR>
@@ -338,6 +349,12 @@ namespace yaclap
             return *this;
         }
 
+        Option& HideFromHelp() noexcept
+        {
+            WithNameAndAlias<CHAR>::SetHideFromHelpImpl();
+            return *this;
+        }
+
         inline const std::basic_string<CHAR>& GetArgumentName() const noexcept
         {
             return m_argName;
@@ -392,6 +409,12 @@ namespace yaclap
         Switch& AddAlias(const Alias<CHAR>& alias)
         {
             WithNameAndAlias<CHAR>::AddAliasImpl(alias);
+            return *this;
+        }
+
+        Switch& HideFromHelp() noexcept
+        {
+            WithNameAndAlias<CHAR>::SetHideFromHelpImpl();
             return *this;
         }
     };
@@ -496,6 +519,12 @@ namespace yaclap
         Command& AddAlias(const Alias<CHAR>& alias)
         {
             WithNameAndAlias<CHAR>::AddAliasImpl(alias);
+            return *this;
+        }
+
+        Command& HideFromHelp() noexcept
+        {
+            WithNameAndAlias<CHAR>::SetHideFromHelpImpl();
             return *this;
         }
 
@@ -1539,6 +1568,13 @@ namespace yaclap
             allSwitches.push_back(&helpSwitch);
         }
 
+        allOptions.erase(std::remove_if(allOptions.begin(), allOptions.end(),
+                                        [](Option<CHAR> const* o) { return o->DoesHideFromHelp(); }),
+                         allOptions.end());
+        allSwitches.erase(std::remove_if(allSwitches.begin(), allSwitches.end(),
+                                         [](Switch<CHAR> const* o) { return o->DoesHideFromHelp(); }),
+                          allSwitches.end());
+
         size_t x = 0;
 
         stream << s::usageCaption << s::nl << s::s << s::s << Parser<CHAR>::GetName();
@@ -1564,11 +1600,22 @@ namespace yaclap
         WithCommandContainer<CHAR> const* cmds = (command == nullptr)
                                                      ? static_cast<WithCommandContainer<CHAR> const*>(this)
                                                      : static_cast<WithCommandContainer<CHAR> const*>(command);
-        if (cmds->CommandsBegin() != cmds->CommandsEnd())
+
+        int cmdsCnt = 0;
+        for (auto cmdsIt = cmds->CommandsBegin(); cmdsIt != cmds->CommandsEnd(); ++cmdsIt)
+        {
+            if (cmdsIt->DoesHideFromHelp())
+            {
+                continue;
+            }
+            cmdsCnt++;
+        }
+        if (cmdsCnt > 0)
         {
             optionalLineBreak(cexprStrLen(s::command) + 1);
             stream << s::s << s::command;
         }
+
         for (Argument<CHAR> const* arg : allArguments)
         {
             if (!arg->IsRequired())
@@ -1579,6 +1626,7 @@ namespace yaclap
             optionalLineBreak(n.size() + 3);
             stream << s::s << s::ob << n << s::cb;
         }
+
         if (!allOptions.empty() || !allSwitches.empty())
         {
             optionalLineBreak(cexprStrLen(s::options) + 1);
@@ -1780,12 +1828,16 @@ namespace yaclap
             stream << s::nl;
         }
 
-        if (cmds->CommandsBegin() != cmds->CommandsEnd())
+        if (cmdsCnt > 0)
         {
             stream << s::commandsCaption << s::nl;
             docu.clear();
             for (auto cmdIt = cmds->CommandsBegin(); cmdIt != cmds->CommandsEnd(); ++cmdIt)
             {
+                if (cmdIt->DoesHideFromHelp())
+                {
+                    continue;
+                }
                 docu.push_back({cmdIt->GetAllNames(), cmdIt->GetDescription()});
             }
 
@@ -2039,6 +2091,13 @@ namespace yaclap
                         state = State::Value;
                         continue;
                     }
+                    if (c == 'o' || c == 'O')
+                    {
+                        base = 8;
+                        limit = (std::numeric_limits<long long>::max)() / 8;
+                        state = State::Value;
+                        continue;
+                    }
                     if (c == 'b' || c == 'B')
                     {
                         base = 2;
@@ -2063,7 +2122,22 @@ namespace yaclap
                         state = State::Value;
                         continue;
                     }
-                    if (base >= 10 && c >= '2' && c <= '9')
+                    if (base >= 8 && c >= '2' && c <= '7')
+                    {
+                        if (v >= limit)
+                        {
+                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                            msg += s::to_string(ResultValueView::GetPosition());
+                            msg += s::errorContextSeparator;
+                            msg += s::errorDataTypeLimit;
+                            m_errorInfo->SetError(msg);
+                            return std::nullopt;
+                        }
+                        v = v * base + static_cast<int>(c - '0');
+                        state = State::Value;
+                        continue;
+                    }
+                    if (base >= 10 && c >= '8' && c <= '9')
                     {
                         if (v >= limit)
                         {

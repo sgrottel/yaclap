@@ -40,6 +40,18 @@ $tests =
 	@{
 		"args" = @("B", "and", "--value", "-b110 ", "--double", "314.159265e-2", "--bool", " true ");
 		"regs" = @("^::::oB0_-6_3\.141[0-9]*_t_a$");
+	},
+	@{
+		"args" = @("cmdA", "--help");
+		"regs" = @("^Usage:$", "^\s+yaclap\.exe\s+CommandA\s+\[options\]$", @{ "not" = "^\s+--input.+\s+An input file\s*$"});
+	},
+	@{
+		"args" = @("B","/V","x12","str");
+		"regs" = @("^::::oB0_18_0_f_a$", "^str$");
+	},
+	@{
+		"args" = @("B","/V","o664","str");
+		"regs" = @("^::::oB0_436_0_f_a$", "^str$");
 	}
 );
 
@@ -59,12 +71,31 @@ foreach ($test in $tests)
 	$hasFail = $false;
 	foreach ($reg in $test.regs)
 	{
+		$invertSucc = $false;
+		if (-not ($reg -is [string]))
+		{
+			if ($reg -is [Hashtable] -and $reg.Contains("not"))
+			{
+				$invertSucc = $true;
+				$reg = $reg["not"];
+			}
+			else
+			{
+				Write-Error "Unexpected results object: $reg"
+			}
+		}
+
 		$countTotal++
 		if ($reg.EndsWith("$") -and -not $reg.EndsWith("\r?$"))
 		{
 			$reg = $reg.SubString(0, $reg.length - 1) + "\r?$";
 		}
 		$succ = $output -match "(?m)$reg"
+		if ($invertSucc)
+		{
+			$succ = -not $succ;
+			$reg = "! " + $reg;
+		}
 		if ($succ)
 		{
 			Write-Host "    $reg ✅"
