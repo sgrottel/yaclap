@@ -106,14 +106,18 @@ namespace yaclap
         bool IsMatch(const std::basic_string_view<CHAR, T>& s) const
         {
             if (s.size() != m_name.size())
+            {
                 return false;
+            }
 
             if (m_stringCompare == StringCompare::CaseInsensitive)
             {
                 for (size_t i = 0; i < s.size(); ++i)
                 {
                     if (!AreCharEqualCaseInsenstive(m_name[i], s[i]))
+                    {
                         return false;
+                    }
                 }
                 return true;
             }
@@ -121,7 +125,9 @@ namespace yaclap
             for (size_t i = 0; i < s.size(); ++i)
             {
                 if (m_name[i] != s[i])
+                {
                     return false;
+                }
             }
             return true;
         }
@@ -159,7 +165,9 @@ namespace yaclap
         void AddAliasImpl(const Alias<CHAR>& alias)
         {
             if (alias.GetName().empty())
+            {
                 throw std::invalid_argument("alias");
+            }
             m_names.push_back(alias);
         }
 
@@ -182,7 +190,9 @@ namespace yaclap
             for (Alias<CHAR> const& a : m_names)
             {
                 if (a.IsMatch(s))
+                {
                     return true;
+                }
             }
             return false;
         }
@@ -214,13 +224,13 @@ namespace yaclap
     };
 
     template <typename CHAR>
-    class WithDesciption
+    class WithDescription
     {
     protected:
-        WithDesciption() noexcept = default;
+        WithDescription() noexcept = default;
 
         template <typename TSTR>
-        WithDesciption(const TSTR& description)
+        WithDescription(const TSTR& description)
             : m_desc{description}
         {
         }
@@ -288,7 +298,7 @@ namespace yaclap
     uint32_t WithIdentity<CHAR>::c_nextId = 1;
 
     template <typename CHAR>
-    class Argument : public WithIdentity<CHAR>, public WithName<CHAR>, public WithDesciption<CHAR>
+    class Argument : public WithIdentity<CHAR>, public WithName<CHAR>, public WithDescription<CHAR>
     {
     public:
         static constexpr bool NotRequired = false;
@@ -297,7 +307,7 @@ namespace yaclap
 
         template <typename TSTR1, typename TSTR2>
         explicit Argument(const TSTR1& name, const TSTR2& description, bool isRequired = true)
-            : WithName<CHAR>{name}, WithDesciption<CHAR>{description}, m_isRequired{isRequired}
+            : WithName<CHAR>{name}, WithDescription<CHAR>{description}, m_isRequired{isRequired}
         {
         }
 
@@ -311,14 +321,14 @@ namespace yaclap
     };
 
     template <typename CHAR>
-    class Option : public WithIdentity<CHAR>, public WithNameAndAlias<CHAR>, public WithDesciption<CHAR>
+    class Option : public WithIdentity<CHAR>, public WithNameAndAlias<CHAR>, public WithDescription<CHAR>
     {
     public:
         Option() noexcept = default;
 
         template <typename TSTR1, typename TSTR2>
         explicit Option(const Alias<CHAR>& name, const TSTR1& argumentName, const TSTR2& description)
-            : WithNameAndAlias<CHAR>{name}, WithDesciption<CHAR>{description}, m_argName{argumentName}
+            : WithNameAndAlias<CHAR>{name}, WithDescription<CHAR>{description}, m_argName{argumentName}
         {
         }
 
@@ -342,11 +352,15 @@ namespace yaclap
             {
                 size_t nameLen = a->GetName().size();
                 if (nameLen >= s.size())
+                {
                     return false;
+                }
                 // space char is part of the separated, in case option name and value were escaped together as one
                 // argument
                 if (s[nameLen] != ':' && s[nameLen] != ' ' && s[nameLen] != '=')
+                {
                     return false;
+                }
                 std::basic_string_view<CHAR> sub{s.data(), nameLen};
 
                 if (a->IsMatch(sub))
@@ -364,14 +378,14 @@ namespace yaclap
     };
 
     template <typename CHAR>
-    class Switch : public WithIdentity<CHAR>, public WithNameAndAlias<CHAR>, public WithDesciption<CHAR>
+    class Switch : public WithIdentity<CHAR>, public WithNameAndAlias<CHAR>, public WithDescription<CHAR>
     {
     public:
         Switch() noexcept = default;
 
         template <typename TSTR>
         explicit Switch(const Alias<CHAR>& name, const TSTR& description)
-            : WithNameAndAlias<CHAR>{name}, WithDesciption<CHAR>{description}
+            : WithNameAndAlias<CHAR>{name}, WithDescription<CHAR>{description}
         {
         }
 
@@ -396,14 +410,18 @@ namespace yaclap
         void AddOptionImpl(const Option<CHAR>& option)
         {
             if (option.NameAliasBegin() == option.NameAliasEnd())
+            {
                 throw std::invalid_argument("option");
+            }
             m_options.push_back(option);
         }
 
         void AddSwitchImpl(const Switch<CHAR>& switchOption)
         {
             if (switchOption.NameAliasBegin() == switchOption.NameAliasEnd())
+            {
                 throw std::invalid_argument("switchOption");
+            }
             m_switches.push_back(switchOption);
         }
 
@@ -464,14 +482,14 @@ namespace yaclap
     class Command : public WithIdentity<CHAR>,
                     public WithCommandContainer<CHAR>,
                     public WithNameAndAlias<CHAR>,
-                    public WithDesciption<CHAR>
+                    public WithDescription<CHAR>
     {
     public:
         Command() noexcept = default;
 
         template <typename TSTR>
         Command(const Alias<CHAR>& name, const TSTR& description)
-            : WithCommandContainer<CHAR>{}, WithNameAndAlias<CHAR>{name}, WithDesciption<CHAR>{description}
+            : WithCommandContainer<CHAR>{}, WithNameAndAlias<CHAR>{name}, WithDescription<CHAR>{description}
         {
         }
 
@@ -530,17 +548,19 @@ namespace yaclap
     void WithCommandContainer<CHAR>::AddCommandImpl(const Command<CHAR>& command)
     {
         if (command.NameAliasBegin() == command.NameAliasEnd())
+        {
             throw std::invalid_argument("command");
+        }
         m_commands.push_back(command);
     }
 
     template <typename CHAR>
-    class Parser : public WithCommandContainer<CHAR>, public WithName<CHAR>, public WithDesciption<CHAR>
+    class Parser : public WithCommandContainer<CHAR>, public WithName<CHAR>, public WithDescription<CHAR>
     {
     public:
         template <typename TSTR1, typename TSTR2>
         Parser(const TSTR1& name, const TSTR2& description)
-            : WithCommandContainer<CHAR>{}, WithName<CHAR>{name}, WithDesciption<CHAR>{description}
+            : WithCommandContainer<CHAR>{}, WithName<CHAR>{name}, WithDescription<CHAR>{description}
         {
         }
 
@@ -776,7 +796,6 @@ namespace yaclap
             }
 
         private:
-
             inline auto GetStringTrimmed() const
             {
                 auto b = std::basic_string_view<CHAR>::cbegin();
@@ -789,7 +808,9 @@ namespace yaclap
                 {
                     auto i = e - 1;
                     if (i == b || !StringConsts::isspace(*i))
+                    {
                         break;
+                    }
                     e = i;
                 }
                 return std::make_pair(b, e);
@@ -878,7 +899,9 @@ namespace yaclap
                 for (auto const& cmdId : m_commands)
                 {
                     if (WithIdentity<CHAR>::Equals(cmdId, cmd))
+                    {
                         return true;
+                    }
                 }
                 return false;
             }
@@ -1169,7 +1192,9 @@ namespace yaclap
     void Parser<CHAR>::Result::PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, bool tryUseColor) const
     {
         if (Result::m_errorInfo->GetError().empty())
+        {
             return;
+        }
 
         bool useColor = false;
 #ifdef _WIN32
@@ -1190,10 +1215,14 @@ namespace yaclap
         }
 #endif
         if (useColor)
+        {
             stream << "\x1B[91m\x1B[40m";
+        }
         stream << m_errorInfo->GetError();
         if (useColor)
+        {
             stream << "\x1B[0m";
+        }
         stream << "\n";
     }
 
@@ -1430,8 +1459,8 @@ namespace yaclap
         }
         width--; // reserve last column to host an explicit new line
 
-        WithDesciption<CHAR> const* desc = (command == nullptr) ? static_cast<WithDesciption<CHAR> const*>(this)
-                                                                : static_cast<WithDesciption<CHAR> const*>(command);
+        WithDescription<CHAR> const* desc = (command == nullptr) ? static_cast<WithDescription<CHAR> const*>(this)
+                                                                 : static_cast<WithDescription<CHAR> const*>(command);
         if (!desc->GetDescription().empty())
         {
             stream << s::descriptionCaption << s::nl;
@@ -1543,7 +1572,9 @@ namespace yaclap
         for (Argument<CHAR> const* arg : allArguments)
         {
             if (!arg->IsRequired())
+            {
                 continue;
+            }
             auto const& n = arg->GetName();
             optionalLineBreak(n.size() + 3);
             stream << s::s << s::ob << n << s::cb;
@@ -1559,7 +1590,9 @@ namespace yaclap
         auto printAndCountSpaces = [&stream](size_t& counter, size_t count)
         {
             if (count <= 0)
+            {
                 return;
+            }
             stream << std::setfill(s::s) << std::setw(count) << s::s;
             counter += count;
         };
@@ -1818,7 +1851,9 @@ namespace yaclap
                 pendingOption = nullptr;
             }
             if (handled)
+            {
                 continue;
+            }
 
             for (Command<CHAR> const* cmd : allCommands)
             {
@@ -1837,7 +1872,9 @@ namespace yaclap
                 }
             }
             if (handled)
+            {
                 continue;
+            }
 
             for (Option<CHAR> const* opt : allOptions)
             {
@@ -1856,7 +1893,9 @@ namespace yaclap
                 }
             }
             if (handled)
+            {
                 continue;
+            }
             for (Switch<CHAR> const* swt : allSwitches)
             {
                 if (swt->IsMatch(arg))
@@ -1874,7 +1913,9 @@ namespace yaclap
                 }
             }
             if (handled)
+            {
                 continue;
+            }
 
             if (!allArguments.empty())
             {
@@ -1884,7 +1925,9 @@ namespace yaclap
                 allArguments.erase(allArguments.begin());
             }
             if (handled)
+            {
                 continue;
+            }
 
             res.AddUnmatchedArgument(ResultValueViewImpl{arg, res.GetErrorInfo(), std::nullopt, argi});
         }
@@ -2316,7 +2359,9 @@ namespace yaclap
         const double e = std::pow(10.0, static_cast<double>(negExp ? -expVal : expVal));
         d *= e;
         if (negVal)
+        {
             d = -d;
+        }
 
         return d;
     }
