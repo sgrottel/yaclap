@@ -41,6 +41,10 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
         .AddAlias(_T("-i"))
         .AddAlias(_T("/i"));
 
+    // Do not show this option in the generated help text
+    inputOption
+        .HideFromHelp();
+
     // A Command changes the 'scope' of parsing, by adding further Options, Switches, and Arguments to the pool of
     // objects from which the input command line will be matched. You can use Commands to structure your application's
     // behavior and to limit the scope of Options, Switches, and Arguments, i.e., instead of ignoring Options, Switches,
