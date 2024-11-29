@@ -2091,6 +2091,13 @@ namespace yaclap
                         state = State::Value;
                         continue;
                     }
+                    if (c == 'o' || c == 'O')
+                    {
+                        base = 8;
+                        limit = (std::numeric_limits<long long>::max)() / 8;
+                        state = State::Value;
+                        continue;
+                    }
                     if (c == 'b' || c == 'B')
                     {
                         base = 2;
@@ -2115,7 +2122,22 @@ namespace yaclap
                         state = State::Value;
                         continue;
                     }
-                    if (base >= 10 && c >= '2' && c <= '9')
+                    if (base >= 8 && c >= '2' && c <= '7')
+                    {
+                        if (v >= limit)
+                        {
+                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                            msg += s::to_string(ResultValueView::GetPosition());
+                            msg += s::errorContextSeparator;
+                            msg += s::errorDataTypeLimit;
+                            m_errorInfo->SetError(msg);
+                            return std::nullopt;
+                        }
+                        v = v * base + static_cast<int>(c - '0');
+                        state = State::Value;
+                        continue;
+                    }
+                    if (base >= 10 && c >= '8' && c <= '9')
                     {
                         if (v >= limit)
                         {

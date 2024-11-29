@@ -44,6 +44,14 @@ $tests =
 	@{
 		"args" = @("cmdA", "--help");
 		"regs" = @("^Usage:$", "^\s+yaclap\.exe\s+CommandA\s+\[options\]$", @{ "not" = "^\s+--input.+\s+An input file\s*$"});
+	},
+	@{
+		"args" = @("B","/V","x12","str");
+		"regs" = @("^::::oB0_18_0_f_a$", "^str$");
+	},
+	@{
+		"args" = @("B","/V","o664","str");
+		"regs" = @("^::::oB0_436_0_f_a$", "^str$");
 	}
 );
 
