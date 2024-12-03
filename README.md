@@ -4,6 +4,8 @@ Yet Another Command Line Argument Parser, for c++, as ___single-header-only___ l
 <!-- Release Remove Begin -->
 [![Build and Test](https://github.com/sgrottel/yaclap/actions/workflows/build-and-test.yaml/badge.svg?branch=main)](https://github.com/sgrottel/yaclap/actions/workflows/build-and-test.yaml)
 [![GitHub](https://img.shields.io/github/license/sgrottel/yaclap)](./LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/sgrottel/yaclap)](https://github.com/sgrottel/yaclap/releases)
+[![NuGet Version](https://img.shields.io/nuget/v/SGrottel.yaclap?logo=nuget&label=Cpp)](https://www.nuget.org/packages/SGrottel.yaclap/)
 <!-- Release Remove End -->
 <!-- Release Uncomment Begin
 %Version Info%
@@ -242,7 +244,11 @@ return res.IsSuccess();
 You can either use the Nuget package (recommended) or directly add the source code.
 
 ### Integration via Nuget (Recommended)
-TODO
+Add the Nuget package [`SGrottel.yaclap`](https://www.nuget.org/packages/SGrottel.yaclap/) to your project.
+The include path will automatically be set accordingly, so you can
+```cpp
+#include "yaclap.hpp"
+```
 
 ### Integration via Code Copy
 Alternatively you can just copy the contents of a [release zip](https://github.com/sgrottel/yaclap/releases) or the contents of the [include](./include) directory to your project (not recommended).
