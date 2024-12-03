@@ -41,8 +41,8 @@ This command line parser is inspired by the [POSIX standard](https://en.wikipedi
 - Automatic aliasing, e.g. shortening option names, is not supported
 - Option bunding (e.g. `-f -d -x` = `-fdx`) is not supported
 
-
 <!-- Release Remove End -->
+
 ## Usage Example
 <!-- Release Uncomment Begin
 You define the command line argument syntax for your application via objects of the types `Command`, `Option`, `Switch`, and `Argument`, added to either `Command` objects or your main `Parser` object.
@@ -279,12 +279,17 @@ Thank you!
 There are plenty of alternatives.
 Especially, if your project is already using a larger framework, you likely already have something available to you.
 
-[Finding alternative cpp command line argument parsers](https://letmegooglethat.com/?q=cpp+command+line+arguments+parser)
+* [Qt `QCommandLineParser` (https://doc.qt.io/qt-6/qcommandlineparser.html)](https://doc.qt.io/qt-6/qcommandlineparser.html)
+* [`Boost.Program_options` (https://www.boost.org/doc/libs/1_57_0/doc/html/program_options.html)](https://www.boost.org/doc/libs/1_57_0/doc/html/program_options.html)
+* [GNU `getopt`](https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html)
+* [Google `gflags`](https://github.com/gflags/gflags)
+* ...
+* [Finding alternative cpp command line argument parsers](https://letmegooglethat.com/?q=cpp+command+line+arguments+parser)
 
 The "minimalistic" and the "native `wchar_t` support" features are the reasons I started this library.
-
-
 <!-- Release Remove End -->
+
+
 ## License
 This library is freely available as open source under the [MIT License](./LICENSE):
 
