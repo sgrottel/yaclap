@@ -33,6 +33,7 @@
 #define YACLAP_VERSION_MINOR 3
 #define YACLAP_VERSION_PATCH 0
 #define YACLAP_VERSION_BUILD 0
+#define YACLAP_VERSION_GITHASHSTR ""
 
 #pragma once
 
@@ -777,6 +778,8 @@ namespace yaclap
             /// Syntax:
             ///     [+-]?[0..9]+
             ///   Optional sign, followed by number characters in base-10
+            ///     [+-]?[oO][0..7]+
+            ///   Optional sign, 'o' marker, followed by octal-number characters in base-8
             ///     [+-]?[xX][0..9a..fA..F]+
             ///   Optional sign, 'x' marker, followed by hex-number characters in base-16
             ///     [+-]?[bB][0..1]+
