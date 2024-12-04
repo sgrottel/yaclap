@@ -4,8 +4,8 @@ Yet Another Command Line Argument Parser, for c++, as ___single-header-only___ l
 <!-- Release Remove Begin -->
 [![Build and Test](https://github.com/sgrottel/yaclap/actions/workflows/build-and-test.yaml/badge.svg?branch=main)](https://github.com/sgrottel/yaclap/actions/workflows/build-and-test.yaml)
 [![GitHub](https://img.shields.io/github/license/sgrottel/yaclap)](./LICENSE)
-[![GitHub Release](https://img.shields.io/github/v/release/sgrottel/yaclap)](https://github.com/sgrottel/yaclap/releases)
-[![NuGet Version](https://img.shields.io/nuget/v/SGrottel.yaclap?logo=nuget&label=Cpp)](https://www.nuget.org/packages/SGrottel.yaclap/)
+[![GitHub Release](https://img.shields.io/github/v/release/sgrottel/yaclap?logo=github)](https://github.com/sgrottel/yaclap/releases)
+[![NuGet Version](https://img.shields.io/nuget/v/SGrottel.yaclap?logo=nuget)](https://www.nuget.org/packages/SGrottel.yaclap/)
 <!-- Release Remove End -->
 <!-- Release Uncomment Begin
 %Version Info%
@@ -236,8 +236,12 @@ parser.PrintErrorAndHelpIfNeeded(res);
 
 And, you should [inform the your application's main logic whether or not the command line argument parsing function was successful](./src/cmdargs.cpp#L211):
 ```cpp
-return res.IsSuccess();
+return res.IsSuccess() && !res.ShouldShowHelp();
 ```
+Note: this example code returns a none-success value if the internal automatic help switch was invoked by the user.
+The help text was already printed by `PrintErrorAndHelpIfNeeded` above.
+So, returning `false` here avoids further program execution.
+You can, of course, implement other means to stop the program after showing the help text, to distinguish this operation from error cases.
 
 
 ## Integration into your Application
