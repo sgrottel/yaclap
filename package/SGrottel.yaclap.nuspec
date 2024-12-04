@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
+	<!-- nuget pack SGrottel.yaclap.nuspec -->
+
+	<!-- package metadata -->
+	<metadata>
+		<id>SGrottel.yaclap</id>
+		<version>0.0.0</version>
+		<title>SGrottel yaclap</title>
+		<authors>SGrottel</authors>
+		<owners>SGrottel</owners>
+		<license type="expression">MIT</license>
+		<projectUrl>https://github.com/sgrottel/yaclap</projectUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>
+			Yet Another Command Line Argument Parser, for c++, as single-header-only library, just because...
+		</description>
+		<copyright>Copyright 2024 SGrottel (www.sgrottel.de)</copyright>
+		<tags>command-line-parser cpp header-only native nativepackage</tags>
+		<readme>docs/README.md</readme>
+	</metadata>
+
+	<!-- content -->
+	<files>
+		<!-- includes -->
+		<file src="..\include\yaclap.hpp" target="build\native\include" />
+		<file src="..\include\ComponentSource.json" target="build\native\include" />
+
+		<!-- VS files -->
+		<file src="SGrottel.yaclap.targets" target="build\native\SGrottel.yaclap.targets" />
+
+		<!-- doc -->
+		<file src="..\LICENSE" target="docs/LICENSE" />
+		<file src="..\include\README.md" target="docs/README.md" />
+	</files>
+
+</package>
