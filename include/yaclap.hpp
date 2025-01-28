@@ -25,8 +25,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-#ifndef _YACLAP_HPP_INCLUDED_
-#define _YACLAP_HPP_INCLUDED_
+#pragma once
 
 // yaclap semantic version: MAJOR.MINOR.PATCH(.BUILD)
 #define YACLAP_VERSION_MAJOR 0
@@ -34,8 +33,6 @@
 #define YACLAP_VERSION_PATCH 0
 #define YACLAP_VERSION_BUILD 0
 #define YACLAP_VERSION_GITHASHSTR ""
-
-#pragma once
 
 #include <algorithm>
 #include <cctype>
@@ -2444,5 +2441,3 @@ namespace yaclap
     }
 
 } // namespace yaclap
-
-#endif /* _YACLAP_HPP_INCLUDED_ */
