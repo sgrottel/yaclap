@@ -30,9 +30,16 @@
 // yaclap semantic version: MAJOR.MINOR.PATCH(.BUILD)
 #define YACLAP_VERSION_MAJOR 0
 #define YACLAP_VERSION_MINOR 3
-#define YACLAP_VERSION_PATCH 0
+#define YACLAP_VERSION_PATCH 1
 #define YACLAP_VERSION_BUILD 0
 #define YACLAP_VERSION_GITHASHSTR ""
+
+#if !defined(__cplusplus)
+#error yaclap.hpp must be compiled as cplusplus source code
+#endif
+#if defined(_MSVC_LANG) && _MSVC_LANG < 201700L
+#error yaclap.hpp requires cpp std 2017 or newer
+#endif
 
 #include <algorithm>
 #include <cctype>
