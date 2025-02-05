@@ -15,7 +15,7 @@
 		<description>
 			Yet Another Command Line Argument Parser, for c++, as single-header-only library, just because...
 		</description>
-		<copyright>Copyright 2024 SGrottel (www.sgrottel.de)</copyright>
+		<copyright>Copyright 2024-2025 SGrottel (www.sgrottel.de)</copyright>
 		<tags>command-line-parser cpp header-only native nativepackage</tags>
 		<readme>docs/README.md</readme>
 	</metadata>
