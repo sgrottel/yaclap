@@ -170,7 +170,7 @@ bool Config::ParseCmdLine(int argc, const _TCHAR* const* argv)
 
     // Switch
     // which can be specified multiple times:
-    m_verbose = res.HasSwitch(verboseSwitch);
+    m_verbose = static_cast<int>(res.HasSwitch(verboseSwitch));
 
     // Arguments
     // the typical case:

@@ -13,7 +13,7 @@ jobs:
   build:
     strategy:
       # Set fail-fast
-      fail-fast: false
+      fail-fast: true
 
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
