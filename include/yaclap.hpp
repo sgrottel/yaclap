@@ -37,7 +37,7 @@
 #if !defined(__cplusplus)
 #error yaclap.hpp must be compiled as cplusplus source code
 #endif
-#if defined(_MSVC_LANG) && _MSVC_LANG < 201700L
+#if (__cplusplus < 201700L) && (!defined(_MSVC_LANG) || (_MSVC_LANG < 201700L))
 #error yaclap.hpp requires cpp std 2017 or newer
 #endif
 
@@ -377,8 +377,8 @@ namespace yaclap
                 {
                     return false;
                 }
-                // space char is part of the separated, in case option name and value were escaped together as one
-                // argument
+                // If option name and value were quoted together, being one arg string, e.g. ` \"-do something\" `,
+                // then the space char is interpreted as separator, making the input the same as `"-do" "something"`.
                 if (s[nameLen] != ':' && s[nameLen] != ' ' && s[nameLen] != '=')
                 {
                     return false;
