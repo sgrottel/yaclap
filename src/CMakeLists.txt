@@ -30,6 +30,8 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
 	set_property(TARGET yaclap PROPERTY CXX_STANDARD_REQUIRED ON)
 endif()
 
+set_property(TARGET yaclap PROPERTY COMPILE_WARNING_AS_ERROR ON)
+
 if (UNICODE STREQUAL "_Unicode")
 	target_compile_definitions(yaclap PUBLIC UNICODE _UNICODE)
 endif()
