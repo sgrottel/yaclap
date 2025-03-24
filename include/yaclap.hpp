@@ -30,7 +30,7 @@
 // yaclap semantic version: MAJOR.MINOR.PATCH(.BUILD)
 #define YACLAP_VERSION_MAJOR 0
 #define YACLAP_VERSION_MINOR 3
-#define YACLAP_VERSION_PATCH 2
+#define YACLAP_VERSION_PATCH 3
 #define YACLAP_VERSION_BUILD 0
 #define YACLAP_VERSION_GITHASHSTR ""
 
@@ -145,13 +145,13 @@ namespace yaclap
     };
 
     template <>
-    bool Alias<char>::AreCharEqualCaseInsenstive(char const& a, char const& b)
+    inline bool Alias<char>::AreCharEqualCaseInsenstive(char const& a, char const& b)
     {
         return std::tolower(a) == std::tolower(b);
     }
 
     template <>
-    bool Alias<wchar_t>::AreCharEqualCaseInsenstive(wchar_t const& a, wchar_t const& b)
+    inline bool Alias<wchar_t>::AreCharEqualCaseInsenstive(wchar_t const& a, wchar_t const& b)
     {
         return std::towlower(a) == std::towlower(b);
     }
@@ -1212,13 +1212,13 @@ namespace yaclap
     };
 
     template <>
-    void Parser<char>::Result::PrintError(bool tryUseColor) const
+    inline void Parser<char>::Result::PrintError(bool tryUseColor) const
     {
         PrintError(std::cout, tryUseColor);
     }
 
     template <>
-    void Parser<wchar_t>::Result::PrintError(bool tryUseColor) const
+    inline void Parser<wchar_t>::Result::PrintError(bool tryUseColor) const
     {
         PrintError(std::wcout, tryUseColor);
     }
@@ -1298,37 +1298,37 @@ namespace yaclap
     }
 
     template <>
-    void Parser<char>::PrintHelp(Command<char> const& command) const
+    inline void Parser<char>::PrintHelp(Command<char> const& command) const
     {
         PrintHelpImpl(&command, std::cout);
     }
 
     template <>
-    void Parser<char>::PrintHelp(Result const& result) const
+    inline void Parser<char>::PrintHelp(Result const& result) const
     {
         PrintHelp(result, std::cout);
     }
 
     template <>
-    void Parser<char>::PrintHelp() const
+    inline void Parser<char>::PrintHelp() const
     {
         PrintHelpImpl(nullptr, std::cout);
     }
 
     template <>
-    void Parser<wchar_t>::PrintHelp(Command<wchar_t> const& command) const
+    inline void Parser<wchar_t>::PrintHelp(Command<wchar_t> const& command) const
     {
         PrintHelpImpl(&command, std::wcout);
     }
 
     template <>
-    void Parser<wchar_t>::PrintHelp(Result const& result) const
+    inline void Parser<wchar_t>::PrintHelp(Result const& result) const
     {
         PrintHelp(result, std::wcout);
     }
 
     template <>
-    void Parser<wchar_t>::PrintHelp() const
+    inline void Parser<wchar_t>::PrintHelp() const
     {
         PrintHelpImpl(nullptr, std::wcout);
     }
@@ -2026,13 +2026,13 @@ namespace yaclap
     }
 
     template <>
-    void Parser<char>::PrintErrorAndHelpIfNeeded(Result const& result) const
+    inline void Parser<char>::PrintErrorAndHelpIfNeeded(Result const& result) const
     {
         Parser<char>::PrintErrorAndHelpIfNeeded(result, std::cout);
     }
 
     template <>
-    void Parser<wchar_t>::PrintErrorAndHelpIfNeeded(Result const& result) const
+    inline void Parser<wchar_t>::PrintErrorAndHelpIfNeeded(Result const& result) const
     {
         Parser<wchar_t>::PrintErrorAndHelpIfNeeded(result, std::wcout);
     }
