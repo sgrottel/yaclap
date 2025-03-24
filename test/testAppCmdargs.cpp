@@ -9,8 +9,8 @@ namespace App
 
     TEST(Cmdargs, CommandA)
     {
-        const TCHAR* const argv[] = {_T("yaclap.exe"), _T("cmda"), _T("-i"), _T("whateff.txt"), _T("-v"), _T("-v")};
-        const int argc = sizeof(argv) / sizeof(TCHAR*);
+        const _TCHAR* const argv[] = {_T("yaclap.exe"), _T("cmda"), _T("-i"), _T("whateff.txt"), _T("-v"), _T("-v")};
+        const int argc = sizeof(argv) / sizeof(_TCHAR*);
 
         Config cfg;
         bool parseOk = cfg.ParseCmdLine(argc, argv);
@@ -18,18 +18,18 @@ namespace App
 
         EXPECT_EQ(Command::CommandA, cfg.m_cmd);
         EXPECT_EQ(2, cfg.m_verbose);
-        EXPECT_EQ(std::basic_string_view<TCHAR>(_T("whateff.txt")), std::basic_string_view<TCHAR>(cfg.m_input));
+        EXPECT_EQ(std::basic_string_view<_TCHAR>(_T("whateff.txt")), std::basic_string_view<_TCHAR>(cfg.m_input));
         EXPECT_EQ(0, cfg.m_intValue);
         EXPECT_EQ(0.0, cfg.m_doubleValue);
         EXPECT_EQ(false, cfg.m_boolValue);
-        EXPECT_EQ(std::basic_string_view<TCHAR>(_T("")), cfg.m_andArg);
+        EXPECT_EQ(std::basic_string_view<_TCHAR>(_T("")), cfg.m_andArg);
     }
 
     TEST(Cmdargs, CommandB)
     {
-        const TCHAR* const argv[] = {_T("yaclap.exe"), _T("B"),  _T("/V"), _T("42"),
+        const _TCHAR* const argv[] = {_T("yaclap.exe"), _T("B"),  _T("/V"), _T("42"),
                                      _T("-v"),         _T("-v"), _T("-v"), _T("and")};
-        const int argc = sizeof(argv) / sizeof(TCHAR*);
+        const int argc = sizeof(argv) / sizeof(_TCHAR*);
 
         Config cfg;
         bool parseOk = cfg.ParseCmdLine(argc, argv);
@@ -41,7 +41,7 @@ namespace App
         EXPECT_EQ(42, cfg.m_intValue);
         EXPECT_EQ(0.0, cfg.m_doubleValue);
         EXPECT_EQ(false, cfg.m_boolValue);
-        EXPECT_EQ(std::basic_string_view<TCHAR>(_T("and")), cfg.m_andArg);
+        EXPECT_EQ(std::basic_string_view<_TCHAR>(_T("and")), cfg.m_andArg);
     }
 
     namespace
@@ -83,8 +83,8 @@ namespace App
 
     TEST(Cmdargs, Help)
     {
-        const TCHAR* const argv[] = {_T("yaclap.exe"), _T("--help")};
-        const int argc = sizeof(argv) / sizeof(TCHAR*);
+        const _TCHAR* const argv[] = {_T("yaclap.exe"), _T("--help")};
+        const int argc = sizeof(argv) / sizeof(_TCHAR*);
 
         Config cfg;
         bool parseOk = false;
@@ -100,15 +100,15 @@ namespace App
         EXPECT_EQ(0, cfg.m_intValue);
         EXPECT_EQ(0.0, cfg.m_doubleValue);
         EXPECT_EQ(false, cfg.m_boolValue);
-        EXPECT_EQ(std::basic_string_view<TCHAR>(_T("")), cfg.m_andArg);
+        EXPECT_EQ(std::basic_string_view<_TCHAR>(_T("")), cfg.m_andArg);
     }
 
     TEST(Cmdargs, Error)
     {
-        const TCHAR* const argv[] = {_T("yaclap.exe"),
+        const _TCHAR* const argv[] = {_T("yaclap.exe"),
                                      _T("B"),
                                      _T("-V")};
-        const int argc = sizeof(argv) / sizeof(TCHAR*);
+        const int argc = sizeof(argv) / sizeof(_TCHAR*);
 
         Config cfg;
         bool parseOk = false;

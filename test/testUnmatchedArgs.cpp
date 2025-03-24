@@ -25,15 +25,15 @@ namespace yaclap_test
         Option opt{_T("-o"), _T("o"), _T("desc.")};
         parser.Add(arg).Add(opt);
 
-        const TCHAR* const argv1[] = {_T("yaclap.exe"), _T("1"), _T("-o"), _T("2")};
-        const int argc1 = sizeof(argv1) / sizeof(TCHAR*);
+        const _TCHAR* const argv1[] = {_T("yaclap.exe"), _T("1"), _T("-o"), _T("2")};
+        const int argc1 = sizeof(argv1) / sizeof(_TCHAR*);
 
         Parser::Result res = parser.Parse(argc1, argv1);
 
         EXPECT_TRUE(res.IsSuccess());
 
-        const TCHAR* const argv2[] = {_T("yaclap.exe"), _T("1"), _T("-o"), _T("2"), _T("3")};
-        const int argc2 = sizeof(argv2) / sizeof(TCHAR*);
+        const _TCHAR* const argv2[] = {_T("yaclap.exe"), _T("1"), _T("-o"), _T("2"), _T("3")};
+        const int argc2 = sizeof(argv2) / sizeof(_TCHAR*);
 
         res = parser.Parse(argc2, argv2);
 
@@ -53,15 +53,15 @@ namespace yaclap_test
         parser.Add(arg).Add(opt);
         parser.SetErrorOnUnmatchedArguments(false);
 
-        const TCHAR* const argv1[] = {_T("yaclap.exe"), _T("1"), _T("-o"), _T("2"), _T("3"), _T("4")};
-        const int argc1 = sizeof(argv1) / sizeof(TCHAR*);
+        const _TCHAR* const argv1[] = {_T("yaclap.exe"), _T("1"), _T("-o"), _T("2"), _T("3"), _T("4")};
+        const int argc1 = sizeof(argv1) / sizeof(_TCHAR*);
 
         Parser::Result res = parser.Parse(argc1, argv1);
 
         EXPECT_TRUE(res.IsSuccess());
         EXPECT_EQ(2, res.UnmatchedArguments().size());
-        EXPECT_EQ(std::basic_string_view<TCHAR>(_T("3")), res.UnmatchedArguments()[0]);
-        EXPECT_EQ(std::basic_string_view<TCHAR>(_T("4")), res.UnmatchedArguments()[1]);
+        EXPECT_EQ(std::basic_string_view<_TCHAR>(_T("3")), res.UnmatchedArguments()[0]);
+        EXPECT_EQ(std::basic_string_view<_TCHAR>(_T("4")), res.UnmatchedArguments()[1]);
     }
 
 } // namespace yaclap_test
