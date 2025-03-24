@@ -17,6 +17,7 @@ include_directories(
 add_executable(yaclap_tests
 	"../src/cmdargs.cpp"
 	"testAppCmdargs.cpp"
+	"testUnmatchedArgs.cpp"
 )
 
 if (MSVC_VERSION GREATER_EQUAL "1900")
