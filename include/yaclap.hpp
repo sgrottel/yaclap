@@ -29,8 +29,8 @@
 
 // yaclap semantic version: MAJOR.MINOR.PATCH(.BUILD)
 #define YACLAP_VERSION_MAJOR 0
-#define YACLAP_VERSION_MINOR 3
-#define YACLAP_VERSION_PATCH 3
+#define YACLAP_VERSION_MINOR 4
+#define YACLAP_VERSION_PATCH 0
 #define YACLAP_VERSION_BUILD 0
 #define YACLAP_VERSION_GITHASHSTR ""
 
@@ -576,6 +576,26 @@ namespace yaclap
         {
             return AddArgument(argument);
         }
+
+        enum class OnUnmatchedArguments
+        {
+            Keep, //< value set by parser or parent command will not be kept during the parsing process
+            SetError,
+            NoError
+        };
+
+        inline void SetErrorOnUnmatchedArguments(OnUnmatchedArguments setError = OnUnmatchedArguments::SetError) noexcept
+        {
+            m_errorOnUnmatchedArguments = setError;
+        }
+
+        inline OnUnmatchedArguments GetSetErrorOnUnmatchedArguments() const noexcept
+        {
+            return m_errorOnUnmatchedArguments;
+        }
+
+    private:
+        OnUnmatchedArguments m_errorOnUnmatchedArguments{OnUnmatchedArguments::Keep};
     };
 
     template <typename CHAR>
@@ -1886,6 +1906,8 @@ namespace yaclap
         addRange(allSwitches, Parser<CHAR>::SwitchesBegin(), Parser<CHAR>::SwitchesEnd());
         addRange(allArguments, Parser<CHAR>::ArgumentsBegin(), Parser<CHAR>::ArgumentsEnd());
 
+        bool errorOnUnmatchedArguments = Parser<CHAR>::IsSetErrorOnUnmatchedArguments();
+
         Option<CHAR> const* pendingOption = nullptr;
 
         for (int argi = skipFirstArg ? 1 : 0; argi < argc; ++argi)
@@ -1924,6 +1946,22 @@ namespace yaclap
                     addRange(allOptions, cmd->OptionsBegin(), cmd->OptionsEnd());
                     addRange(allSwitches, cmd->SwitchesBegin(), cmd->SwitchesEnd());
                     addRange(allArguments, cmd->ArgumentsBegin(), cmd->ArgumentsEnd());
+
+                    switch (cmd->GetSetErrorOnUnmatchedArguments())
+                    {
+                        case Command<CHAR>::OnUnmatchedArguments::SetError:
+                            errorOnUnmatchedArguments = true;
+                            break;
+                        case Command<CHAR>::OnUnmatchedArguments::NoError:
+                            errorOnUnmatchedArguments = false;
+                            break;
+                        case Command<CHAR>::OnUnmatchedArguments::Keep:
+                            // no change
+                            break;
+                        default:
+                            res.SetError(s::errorGenericParserError);
+                            return res;
+                    }
 
                     res.AddCommand(*cmd);
                     handled = true;
@@ -2007,7 +2045,7 @@ namespace yaclap
             msg += pendingOption->NameAliasBegin()->GetName();
             res.SetError(msg);
         }
-        else if (m_errorOnUnmatchedArguments && res.HasUnmatchedArguments())
+        else if (errorOnUnmatchedArguments && res.HasUnmatchedArguments())
         {
             res.SetError(s::errorUnmatchedArguments);
         }
