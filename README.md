@@ -259,6 +259,14 @@ Alternatively you can just copy the contents of a [release zip](https://github.c
 It's recommended you place the files into a separate subdirectory and add that directory to your include directories compiler options, for separation of concerns.
 
 
+## Fuzz Test
+The yaclap library is fuzz tested.
+
+For details on how to run the fuzz tests yourself see: [fuzzing/README.md](fuzzing/README.md)
+
+🚧 TODO: Fuzz test results published
+
+
 ## Report Issues
 If you found an issue, please have a look at the [Issues list](https://github.com/sgrottel/yaclap/issues).
 

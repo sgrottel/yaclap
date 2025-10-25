@@ -1,0 +1,3 @@
+[submodule "fuzzing/external/fuzztest"]
+	path = fuzzing/external/fuzztest
+	url = https://github.com/google/fuzztest.git
