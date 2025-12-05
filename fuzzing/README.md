@@ -49,7 +49,7 @@ LLVM_PROFILE_FILE="coverage.profraw" ./yaclap_fuzz_test --fuzz=Yaclap.FuzzTest
 ```
 ./yaclap_fuzz_test --fuzz=Yaclap.FuzzTest
 ```
-Optionally add: `--fuzz_for=60s`, `--fuzz_for=5m`, `--fuzz_for=60s` or similar.
+Optionally add: `--fuzz_for=60s`, `--fuzz_for=5m`, `--fuzz_for=1h` or similar.
 
 ### Report Coverage
 

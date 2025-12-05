@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
 	clang \
 	llvm-15 llvm-15-tools \
 	build-essential \
+	libicu-dev \
 	cmake \
 	gdb \
 	nano \
