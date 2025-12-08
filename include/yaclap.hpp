@@ -30,7 +30,7 @@
 // yaclap semantic version: MAJOR.MINOR.PATCH(.BUILD)
 #define YACLAP_VERSION_MAJOR 0
 #define YACLAP_VERSION_MINOR 4
-#define YACLAP_VERSION_PATCH 0
+#define YACLAP_VERSION_PATCH 1
 #define YACLAP_VERSION_BUILD 0
 #define YACLAP_VERSION_GITHASHSTR ""
 
@@ -1252,8 +1252,12 @@ namespace yaclap
             return;
         }
 
+#ifndef _WIN32
+        constexpr
+#endif
         bool useColor = false;
 #ifdef _WIN32
+        if (tryUseColor)
         {
             HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
             DWORD mode;
@@ -2081,12 +2085,12 @@ namespace yaclap
     {
         if (!result.IsSuccess())
         {
-            result.PrintError();
+            result.PrintError(stream);
             stream << StringConsts::nl;
         }
         if (result.ShouldShowHelp())
         {
-            Parser<CHAR>::PrintHelp(result);
+            Parser<CHAR>::PrintHelp(result, stream);
         }
     }
 

@@ -131,7 +131,7 @@ void FuzzTestImpl(const std::vector<STR>& args, bool skipFirst)
     argv.resize(args.size());
     std::transform(args.begin(), args.end(), argv.begin(), [](auto const& a) { return a.c_str(); });
 
-    typename Parser::Result res = parser.Parse(argv.size(), argv.data());
+    typename Parser::Result res = parser.Parse(argv.size(), argv.data(), skipFirst);
 
     auto c1 = res.HasCommand(commandA);
     auto c2 = res.HasCommand(commandB);
@@ -236,23 +236,27 @@ std::vector<TestInputData> FuzzTestSeeds()
     data.push_back({{"yaclap.exe", "B", "-V"}, true, TestStringEncoding::Ascii});
     data.push_back({{"CommandA", "--input", "whateff.txt", "-v", "/v"}, false, TestStringEncoding::Ascii});
     data.push_back({{"A", "/i", "whateff.txt", "-v", "/v"}, false, TestStringEncoding::Ascii});
-    data.push_back({{"CommandB", "--double", "3.74"}, false, TestStringEncoding::Ascii});
-    data.push_back({{"CmdB", "--double", "-1.374E-1"}, false, TestStringEncoding::Ascii});
-    data.push_back({{"CmdB", "--double", "+2.374e+2"}, false, TestStringEncoding::Ascii});
-    data.push_back({{"B", "--double", "no"}, false, TestStringEncoding::Ascii});
-    data.push_back({{"B", "--double", ""}, false, TestStringEncoding::Ascii});
-    data.push_back({{"CommandB", "--bool", "true"}, false, TestStringEncoding::Ascii});
-    data.push_back({{"CmdB","--bool", "no"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CommandB", "--double", "3.74", "and"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CmdB", "--double", "-1.374E-1", "and"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CmdB", "--double", "+2.374e+2", "and"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"B", "--double", "no", "and"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"B", "--double", "", "and"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CommandB", "--bool", "true", "and"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CmdB", "--bool", "no", "and"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CmdB", "--bool", "no", "and", "or"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CmdB", "--bool", "no", "and", "or", "else"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CmdB", "--bool", "1", "and"}, false, TestStringEncoding::Ascii});
     data.push_back({{"CmdB", "--bool", "1"}, false, TestStringEncoding::Ascii});
-    data.push_back({{"B", "--bool", ""}, false, TestStringEncoding::Ascii});
-    data.push_back({{"B", "--bool", "idontthinkso"}, false, TestStringEncoding::Ascii});
-    data.push_back({{"yaclap.exe", "B", "-V", "+xafFE0123456789"}, true, TestStringEncoding::Ascii});
-    data.push_back({{"yaclap.exe", "B", "-V", "-o777"}, true, TestStringEncoding::Ascii});
-    data.push_back({{"yaclap.exe", "B", "-V", "-b0110"}, true, TestStringEncoding::Ascii});
-    data.push_back({{"yaclap.exe", "B", "-V", "-bG"}, true, TestStringEncoding::Ascii});
-    data.push_back({{"yaclap.exe", "B", "-V", "+H"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"B", "--bool", "", "and"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"B", "--bool", "idontthinkso", "and"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "+xafFE0123456789", "and"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "-o777", "and"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "-b0110", "and"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "-bG", "and"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "+H", "and"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "Nonono", "and"}, true, TestStringEncoding::Ascii});
     data.push_back({{"yaclap.exe", "B", "-V", "Nonono"}, true, TestStringEncoding::Ascii});
-    data.push_back({{"B", "--bool", "true", "--bool", "false"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"B", "--bool", "true", "--bool", "false", "and"}, false, TestStringEncoding::Ascii});
 
     // duplicate input cases for unicode
     const size_t cnt = data.size();
