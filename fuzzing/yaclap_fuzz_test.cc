@@ -9,6 +9,7 @@
 
 #include <cassert>
 #include <string>
+#include <sstream>
 #include <vector>
 
 namespace
@@ -27,40 +28,6 @@ namespace
             os[i] = static_cast<wchar_t>(ustr[i]);
         }
     }
-
-    class StdCoutSilence
-    {
-    public:
-        StdCoutSilence()
-            : originalBuffer{std::cout.rdbuf()}, nullStream{}, originalWBuffer{std::wcout.rdbuf()}, nullWStream{}
-        {
-            std::cout.rdbuf(nullStream.rdbuf());
-            std::wcout.rdbuf(nullWStream.rdbuf());
-        }
-
-        ~StdCoutSilence()
-        {
-            try
-            {
-                std::cout.rdbuf(originalBuffer);
-            }
-            catch (...)
-            {
-            }
-            try
-            {
-                std::wcout.rdbuf(originalWBuffer);
-            }
-            catch (...)
-            {
-            }
-        }
-    private:
-        std::streambuf* originalBuffer;
-        std::ostringstream nullStream;
-        std::wstreambuf* originalWBuffer;
-        std::wostringstream nullWStream;
-    };
 }
 
 
@@ -92,13 +59,24 @@ void FuzzTestImpl(const std::vector<STR>& args, bool skipFirst)
     inputOption
         .AddAlias(_T("-i").c_str())
         .AddAlias(_T("/i"));
+    try
+    {
+        inputOption.AddAlias(_T(""));
+    }
+    catch (...)
+    {
+    }
 
     inputOption
         .HideFromHelp();
 
     Command commandA{
         {_T("CommandA").c_str(), StringCompare::CaseInsensitive},
-        _T("Command A")};
+        _T("Command A description with a very long string to hopefully force a line break when printing the help text into the string stream"
+           " down below at the end of the fuzz test. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt ut"
+           " labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquid ex ea commodi"
+           " consequat. Quis aute iure reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat"
+           " cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum")};
     commandA
         .AddAlias({_T("CmdA"), StringCompare::CaseInsensitive})
         .AddAlias(_T("A"))
@@ -157,11 +135,13 @@ void FuzzTestImpl(const std::vector<STR>& args, bool skipFirst)
 
     auto c1 = res.HasCommand(commandA);
     auto c2 = res.HasCommand(commandB);
+    auto c3 = res.Commands();
+    auto c4 = res.ShouldShowHelp();
 
     auto inputValue = res.GetOptionValue(inputOption, Parser::Result::ErrorIfMultiple);
     if (inputValue)
     {
-        auto c3 = inputValue.data();
+        auto c5 = inputValue.data();
     }
 
     for (typename Parser::ResultValueView const& s : res.GetOptionValues(intValueOption))
@@ -169,47 +149,55 @@ void FuzzTestImpl(const std::vector<STR>& args, bool skipFirst)
         auto intVal = s.AsInteger();
         if (intVal.has_value())
         {
-            auto c4 = intVal.value();
+            auto c6 = intVal.value();
         }
     }
 
     auto dValOpt = res.GetOptionValue(doubleValueOption, Parser::Result::ErrorIfMultiple).AsDouble();
     if (dValOpt)
     {
-        auto c5 = dValOpt.value();
+        auto c7 = dValOpt.value();
     }
 
-    auto c6 = res.GetOptionValue(boolValueOption, Parser::Result::ErrorIfMultiple).AsBool().value_or(false);
+    auto c8 = res.GetOptionValue(boolValueOption, Parser::Result::ErrorIfMultiple).AsBool().value_or(false);
 
-    auto c7 = static_cast<int>(res.HasSwitch(verboseSwitch));
+    auto c9 = static_cast<int>(res.HasSwitch(verboseSwitch));
 
     auto andValue = res.GetArgument(andArgument);
     if (andValue)
     {
-        auto c8 = andValue;
+        auto c10 = andValue;
     }
 
     auto orValue = res.GetArgument(orArgument);
     if (orValue)
     {
-        auto c9 = orValue;
+        auto c11 = orValue;
     }
 
     if (res.HasUnmatchedArguments())
     {
         for (auto const& arg : res.UnmatchedArguments())
         {
-            auto c10 = arg.data();
+            auto c12 = arg.data();
         }
     }
 
-//    {
-//        StdCoutSilence silence;
-//
-//        parser.PrintErrorAndHelpIfNeeded(res);
-//    }
+    {
+        std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> mem;
+        res.PrintError(mem, false);
+        parser.PrintHelp(mem);
+        parser.PrintHelp(res, mem);
+        parser.PrintHelp(commandA, mem);
+        parser.PrintHelp(commandB, mem);
+        parser.PrintErrorAndHelpIfNeeded(res, mem);
+    }
 
-    auto c11 = res.IsSuccess();
+    auto c13 = res.IsSuccess();
+
+    auto c14 = doubleValueOption.GetArgumentName();
+
+    res.SetError(_T("").c_str(), false);
 }
 
 enum class TestStringEncoding {
@@ -226,8 +214,7 @@ void FuzzTest(const std::vector<std::string>& args, bool skipFirst, TestStringEn
     else 
     {
         assert(encoding == TestStringEncoding::Unicode);
-        std::vector<std::wstring> wargs;
-        wargs.resize(args.size());
+        std::vector<std::wstring> wargs(args.size(), L"");
         std::transform(args.begin(), args.end(), wargs.begin(), [](std::string const& strU8) -> std::wstring {
             std::wstring wstr;
             Assign(wstr, strU8.c_str());
@@ -237,20 +224,47 @@ void FuzzTest(const std::vector<std::string>& args, bool skipFirst, TestStringEn
     }
 }
 
-std::vector<std::tuple<std::vector<std::string>, bool, TestStringEncoding>> FuzzTestSeeds()
+using TestInputData = std::tuple<std::vector<std::string>, bool, TestStringEncoding>;
+
+std::vector<TestInputData> FuzzTestSeeds()
 {
-    return {
-        {{"yaclap.exe", "cmda", "-i", "whateff.txt", "-v", "-v"}, true, TestStringEncoding::Ascii},
-        {{"yaclap.exe", "B",  "/V", "42", "-v", "-v", "-v", "and"}, true, TestStringEncoding::Ascii},
-        {{"yaclap.exe", "--help"}, true, TestStringEncoding::Ascii},
-        {{"yaclap.exe", "B", "-V"}, true, TestStringEncoding::Ascii},
-        {{"cmda", "-i", "whateff.txt", "-v", "-v"}, false, TestStringEncoding::Ascii},
-        {{"yaclap.exe", "cmda", "-i", "whateff.txt", "-v", "-v"}, true, TestStringEncoding::Unicode},
-        {{"yaclap.exe", "B",  "/V", "42", "-v", "-v", "-v", "and"}, true, TestStringEncoding::Unicode},
-        {{"yaclap.exe", "--help"}, true, TestStringEncoding::Unicode},
-        {{"yaclap.exe", "B", "-V"}, true, TestStringEncoding::Unicode},
-        {{"cmda", "-i", "whateff.txt", "-v", "-v"}, false, TestStringEncoding::Unicode}
-    };
+    std::vector<TestInputData> data;
+
+    data.push_back({{"yaclap.exe", "cmda", "-i", "whateff.txt", "-v", "-v"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "/V", "42", "-v", "-v", "-v", "and"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "--help"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"CommandA", "--input", "whateff.txt", "-v", "/v"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"A", "/i", "whateff.txt", "-v", "/v"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CommandB", "--double", "3.74"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CmdB", "--double", "-1.374E-1"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CmdB", "--double", "+2.374e+2"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"B", "--double", "no"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"B", "--double", ""}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CommandB", "--bool", "true"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CmdB","--bool", "no"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"CmdB", "--bool", "1"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"B", "--bool", ""}, false, TestStringEncoding::Ascii});
+    data.push_back({{"B", "--bool", "idontthinkso"}, false, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "+xafFE0123456789"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "-o777"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "-b0110"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "-bG"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "+H"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"yaclap.exe", "B", "-V", "Nonono"}, true, TestStringEncoding::Ascii});
+    data.push_back({{"B", "--bool", "true", "--bool", "false"}, false, TestStringEncoding::Ascii});
+
+    // duplicate input cases for unicode
+    const size_t cnt = data.size();
+    for (size_t i = 0; i < cnt; ++i)
+    {
+        auto di = data[i];
+        data.push_back({std::get<0>(di), std::get<1>(di), TestStringEncoding::Unicode});
+    }
+
+    data.push_back({{"yaclap.exe", "cmda", "-i", u8"破滅"}, true, TestStringEncoding::Unicode});
+
+    return data;
 }
 
 FUZZ_TEST(Yaclap, FuzzTest)
