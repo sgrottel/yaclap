@@ -51,6 +51,9 @@ CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Debug -DFUZZTEST_FUZZING_MODE=on .
 ```
 CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=RelWithDebug -DFUZZTEST_FUZZING_MODE=on ..
 ```
+```
+CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Release -DFUZZTEST_FUZZING_MODE=on ..
+```
 
 Then build:
 ```
