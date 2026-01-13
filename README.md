@@ -6,6 +6,12 @@ Yet Another Command Line Argument Parser, for c++, as ___single-header-only___ l
 [![GitHub](https://img.shields.io/github/license/sgrottel/yaclap)](./LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/sgrottel/yaclap?logo=github)](https://github.com/sgrottel/yaclap/releases)
 [![NuGet Version](https://img.shields.io/nuget/v/SGrottel.yaclap?logo=nuget)](https://www.nuget.org/packages/SGrottel.yaclap/)
+
+Most recent [fuzz test](fuzzing/README.md) run: [2026-01 (fuzzing/results_2026_01.md)](fuzzing/results_2026_01.md)
+- Ran for 5 days = 120 h on a dedicated PC
+- ✅ No issues or crashes found
+- [Full run log available: (fuzzing/fuzz_test_run_2026_01.log)](fuzzing/fuzz_test_run_2026_01.log)
+
 <!-- Release Remove End -->
 <!-- Release Uncomment Begin
 %Version Info%
