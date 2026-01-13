@@ -5,3 +5,5 @@ include/ComponentSource.json
 include/README.md
 *.nupkg
 *.zip
+fuzzing/build
+fuzzing/dist
