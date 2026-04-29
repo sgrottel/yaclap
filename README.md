@@ -271,6 +271,7 @@ This project uses CMake.
 ```pwsh
 cmake -S . -B build -G Ninja
 cmake --build build
+.\build\test\yaclap_tests.exe
 ```
 
 
