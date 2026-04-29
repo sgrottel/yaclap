@@ -7,3 +7,4 @@ include/README.md
 *.zip
 fuzzing/build
 fuzzing/dist
+build

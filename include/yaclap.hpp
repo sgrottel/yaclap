@@ -5,7 +5,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2024-2025 Sebastian Grottel
+// Copyright(c) 2024-2026 Sebastian Grottel
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -30,7 +30,7 @@
 // yaclap semantic version: MAJOR.MINOR.PATCH(.BUILD)
 #define YACLAP_VERSION_MAJOR 0
 #define YACLAP_VERSION_MINOR 4
-#define YACLAP_VERSION_PATCH 1
+#define YACLAP_VERSION_PATCH 2
 #define YACLAP_VERSION_BUILD 0
 #define YACLAP_VERSION_GITHASHSTR ""
 
@@ -298,7 +298,7 @@ namespace yaclap
             return *this;
         }
 
-        inline const auto GetId() const noexcept
+        inline auto GetId() const noexcept
         {
             return m_id;
         }
@@ -809,7 +809,7 @@ namespace yaclap
             ///     [+-]?[bB][0..1]+
             ///   Optional sign, 'b' marker, followed by binary-number characters in base-2
             /// </remarks>
-            std::optional<long long> AsInteger(bool errorWhenTypeParingFails = true) const;
+            std::optional<long long> AsInteger(bool errorWhenTypeParsingFails = true) const;
 
             /// <summary>
             /// Converts a string optional return from this result into a floating-point (64bit double) optional.
@@ -824,7 +824,7 @@ namespace yaclap
             ///   must start with the dot. Sign character is optional. Exponent must start with the e-marker. Exponent
             ///   is optional. Exponent sign is optional.
             /// </remarks>
-            std::optional<double> AsDouble(bool errorWhenTypeParingFails = true) const;
+            std::optional<double> AsDouble(bool errorWhenTypeParsingFails = true) const;
 
             /// <summary>
             /// Converts a string optional return from this result into a boolean (bool) optional.
@@ -842,7 +842,7 @@ namespace yaclap
             ///     (int)
             ///   Else, if the input string can be parsed as integer (cf. AsInteger), the return value is "(int) != 0"
             /// </remarks>
-            std::optional<bool> AsBool(bool errorWhenTypeParingFails = true) const;
+            std::optional<bool> AsBool(bool errorWhenTypeParsingFails = true) const;
 
         protected:
             ResultValueView(std::basic_string_view<CHAR> str, std::shared_ptr<ResultErrorInfo> errorInfo,
@@ -1008,8 +1008,11 @@ namespace yaclap
             {
                 if (GetOptionCount(opt) > 1)
                 {
-                    m_errorInfo->SetError(string_t{StringConsts::errorOptionSpecifiedMultipletimes} +
-                                          opt.NameAliasBegin()->GetName());
+                    if (setErrorIfMultiple)
+                    {
+                        m_errorInfo->SetError(string_t{StringConsts::errorOptionSpecifiedMultipletimes} +
+                                            opt.NameAliasBegin()->GetName());
+                    }
                     return {};
                 }
                 return GetOptionValue(opt);
@@ -1245,7 +1248,7 @@ namespace yaclap
 
     template <typename CHAR>
     template <typename TSTREAMT>
-    void Parser<CHAR>::Result::PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, bool tryUseColor) const
+    void Parser<CHAR>::Result::PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, [[maybe_unused]] bool tryUseColor) const
     {
         if (Result::m_errorInfo->GetError().empty())
         {
@@ -1701,7 +1704,6 @@ namespace yaclap
 
                 while (nameBegin != nameEnd)
                 {
-                    size_t x = 0;
                     typename string::const_iterator nameNext = nameEnd;
 
                     size_t nameLen = static_cast<size_t>(nameNext - nameBegin);
@@ -1829,10 +1831,10 @@ namespace yaclap
             docu.clear();
             for (Argument<CHAR> const* arg : allArguments)
             {
-                string desc = (arg->IsRequired() ? s::tagRequired : s::tagOptional);
-                desc += s::s;
-                desc += arg->GetDescription();
-                docu.push_back({arg->GetName(), desc});
+                string desc2 = (arg->IsRequired() ? s::tagRequired : s::tagOptional);
+                desc2 += s::s;
+                desc2 += arg->GetDescription();
+                docu.push_back({arg->GetName(), desc2});
             }
 
             formatDocuTable();
@@ -2095,7 +2097,7 @@ namespace yaclap
     }
 
     template <typename CHAR>
-    std::optional<long long> Parser<CHAR>::ResultValueView::AsInteger(bool errorWhenTypeParingFails) const
+    std::optional<long long> Parser<CHAR>::ResultValueView::AsInteger(bool errorWhenTypeParsingFails) const
     {
         long long limit = (std::numeric_limits<long long>::max)() / 10;
 
@@ -2160,11 +2162,14 @@ namespace yaclap
                     {
                         if (v >= limit)
                         {
-                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
-                            msg += s::to_string(ResultValueView::GetPosition());
-                            msg += s::errorContextSeparator;
-                            msg += s::errorDataTypeLimit;
-                            m_errorInfo->SetError(msg);
+                            if (errorWhenTypeParsingFails)
+                            {
+                                std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                                msg += s::to_string(ResultValueView::GetPosition());
+                                msg += s::errorContextSeparator;
+                                msg += s::errorDataTypeLimit;
+                                m_errorInfo->SetError(msg);
+                            }
                             return std::nullopt;
                         }
                         v = v * base + static_cast<int>(c - '0');
@@ -2175,11 +2180,14 @@ namespace yaclap
                     {
                         if (v >= limit)
                         {
-                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
-                            msg += s::to_string(ResultValueView::GetPosition());
-                            msg += s::errorContextSeparator;
-                            msg += s::errorDataTypeLimit;
-                            m_errorInfo->SetError(msg);
+                            if (errorWhenTypeParsingFails)
+                            {
+                                std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                                msg += s::to_string(ResultValueView::GetPosition());
+                                msg += s::errorContextSeparator;
+                                msg += s::errorDataTypeLimit;
+                                m_errorInfo->SetError(msg);
+                            }
                             return std::nullopt;
                         }
                         v = v * base + static_cast<int>(c - '0');
@@ -2190,11 +2198,14 @@ namespace yaclap
                     {
                         if (v >= limit)
                         {
-                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
-                            msg += s::to_string(ResultValueView::GetPosition());
-                            msg += s::errorContextSeparator;
-                            msg += s::errorDataTypeLimit;
-                            m_errorInfo->SetError(msg);
+                            if (errorWhenTypeParsingFails)
+                            {
+                                std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                                msg += s::to_string(ResultValueView::GetPosition());
+                                msg += s::errorContextSeparator;
+                                msg += s::errorDataTypeLimit;
+                                m_errorInfo->SetError(msg);
+                            }
                             return std::nullopt;
                         }
                         v = v * base + static_cast<int>(c - '0');
@@ -2205,11 +2216,14 @@ namespace yaclap
                     {
                         if (v >= limit)
                         {
-                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
-                            msg += s::to_string(ResultValueView::GetPosition());
-                            msg += s::errorContextSeparator;
-                            msg += s::errorDataTypeLimit;
-                            m_errorInfo->SetError(msg);
+                            if (errorWhenTypeParsingFails)
+                            {
+                                std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                                msg += s::to_string(ResultValueView::GetPosition());
+                                msg += s::errorContextSeparator;
+                                msg += s::errorDataTypeLimit;
+                                m_errorInfo->SetError(msg);
+                            }
                             return std::nullopt;
                         }
                         v = v * base + (10 + static_cast<int>(c - 'a'));
@@ -2220,11 +2234,14 @@ namespace yaclap
                     {
                         if (v >= limit)
                         {
-                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
-                            msg += s::to_string(ResultValueView::GetPosition());
-                            msg += s::errorContextSeparator;
-                            msg += s::errorDataTypeLimit;
-                            m_errorInfo->SetError(msg);
+                            if (errorWhenTypeParsingFails)
+                            {
+                                std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                                msg += s::to_string(ResultValueView::GetPosition());
+                                msg += s::errorContextSeparator;
+                                msg += s::errorDataTypeLimit;
+                                m_errorInfo->SetError(msg);
+                            }
                             return std::nullopt;
                         }
                         v = v * base + (10 + static_cast<int>(c - 'A'));
@@ -2234,16 +2251,18 @@ namespace yaclap
                     break;
 
                 default:
-                {
-                    std::basic_string<CHAR> msg{s::errorParserValueConversion};
-                    msg += s::to_string(ResultValueView::GetPosition());
-                    msg += s::errorContextSeparator;
-                    msg += s::errorGenericParserError;
-                    m_errorInfo->SetError(msg);
-                }
+                    if (errorWhenTypeParsingFails)
+                    {
+                        std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                        msg += s::to_string(ResultValueView::GetPosition());
+                        msg += s::errorContextSeparator;
+                        msg += s::errorGenericParserError;
+                        m_errorInfo->SetError(msg);
+                    }
                     return std::nullopt;
             }
 
+            if (errorWhenTypeParsingFails)
             {
                 std::basic_string<CHAR> msg{s::errorParserValueConversion};
                 msg += s::to_string(ResultValueView::GetPosition());
@@ -2257,11 +2276,14 @@ namespace yaclap
 
         if (state != State::Value)
         {
-            std::basic_string<CHAR> msg{s::errorParserValueConversion};
-            msg += s::to_string(ResultValueView::GetPosition());
-            msg += s::errorContextSeparator;
-            msg += s::errorMissingInput;
-            m_errorInfo->SetError(msg);
+            if (errorWhenTypeParsingFails)
+            {
+                std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                msg += s::to_string(ResultValueView::GetPosition());
+                msg += s::errorContextSeparator;
+                msg += s::errorMissingInput;
+                m_errorInfo->SetError(msg);
+            }
             return std::nullopt;
         }
 
@@ -2273,17 +2295,20 @@ namespace yaclap
     }
 
     template <typename CHAR>
-    std::optional<bool> Parser<CHAR>::ResultValueView::AsBool(bool errorWhenTypeParingFails) const
+    std::optional<bool> Parser<CHAR>::ResultValueView::AsBool(bool errorWhenTypeParsingFails) const
     {
         auto strRange = ResultValueView::GetStringTrimmed();
 
         if (strRange.first == strRange.second)
         {
-            std::basic_string<CHAR> msg{StringConsts::errorParserValueConversion};
-            msg += StringConsts::to_string(ResultValueView::GetPosition());
-            msg += StringConsts::errorContextSeparator;
-            msg += StringConsts::errorMissingInput;
-            m_errorInfo->SetError(msg);
+            if (errorWhenTypeParsingFails)
+            {
+                std::basic_string<CHAR> msg{StringConsts::errorParserValueConversion};
+                msg += StringConsts::to_string(ResultValueView::GetPosition());
+                msg += StringConsts::errorContextSeparator;
+                msg += StringConsts::errorMissingInput;
+                m_errorInfo->SetError(msg);
+            }
             return std::nullopt;
         }
 
@@ -2309,23 +2334,26 @@ namespace yaclap
             }
         }
 
-        auto intVal = ResultValueView::AsInteger(errorWhenTypeParingFails);
+        auto intVal = ResultValueView::AsInteger(errorWhenTypeParsingFails);
         if (intVal.has_value())
         {
             return intVal.value() != 0;
         }
 
-        std::basic_string<CHAR> msg{StringConsts::errorParserValueConversion};
-        msg += StringConsts::to_string(ResultValueView::GetPosition());
-        msg += StringConsts::errorContextSeparator;
-        msg += StringConsts::errorUnexpectedInput;
-        m_errorInfo->SetError(msg);
+        if (errorWhenTypeParsingFails)
+        {
+            std::basic_string<CHAR> msg{StringConsts::errorParserValueConversion};
+            msg += StringConsts::to_string(ResultValueView::GetPosition());
+            msg += StringConsts::errorContextSeparator;
+            msg += StringConsts::errorUnexpectedInput;
+            m_errorInfo->SetError(msg);
+        }
 
         return std::nullopt;
     }
 
     template <typename CHAR>
-    std::optional<double> Parser<CHAR>::ResultValueView::AsDouble(bool errorWhenTypeParingFails) const
+    std::optional<double> Parser<CHAR>::ResultValueView::AsDouble(bool errorWhenTypeParsingFails) const
     {
         using s = StringConsts;
 
@@ -2375,11 +2403,14 @@ namespace yaclap
                     {
                         if (fullVal >= limit)
                         {
-                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
-                            msg += s::to_string(ResultValueView::GetPosition());
-                            msg += s::errorContextSeparator;
-                            msg += s::errorDataTypeLimit;
-                            m_errorInfo->SetError(msg);
+                            if (errorWhenTypeParsingFails)
+                            {
+                                std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                                msg += s::to_string(ResultValueView::GetPosition());
+                                msg += s::errorContextSeparator;
+                                msg += s::errorDataTypeLimit;
+                                m_errorInfo->SetError(msg);
+                            }
                             return std::nullopt;
                         }
                         state = State::FullVal;
@@ -2433,11 +2464,14 @@ namespace yaclap
                     {
                         if (expVal >= limit)
                         {
-                            std::basic_string<CHAR> msg{s::errorParserValueConversion};
-                            msg += s::to_string(ResultValueView::GetPosition());
-                            msg += s::errorContextSeparator;
-                            msg += s::errorDataTypeLimit;
-                            m_errorInfo->SetError(msg);
+                            if (errorWhenTypeParsingFails)
+                            {
+                                std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                                msg += s::to_string(ResultValueView::GetPosition());
+                                msg += s::errorContextSeparator;
+                                msg += s::errorDataTypeLimit;
+                                m_errorInfo->SetError(msg);
+                            }
                             return std::nullopt;
                         }
                         expVal *= 10;
@@ -2447,16 +2481,18 @@ namespace yaclap
                     break;
 
                 default:
-                {
-                    std::basic_string<CHAR> msg{s::errorParserValueConversion};
-                    msg += s::to_string(ResultValueView::GetPosition());
-                    msg += s::errorContextSeparator;
-                    msg += s::errorGenericParserError;
-                    m_errorInfo->SetError(msg);
-                }
+                    if (errorWhenTypeParsingFails)
+                    {
+                        std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                        msg += s::to_string(ResultValueView::GetPosition());
+                        msg += s::errorContextSeparator;
+                        msg += s::errorGenericParserError;
+                        m_errorInfo->SetError(msg);
+                    }
                     return std::nullopt;
             }
 
+            if (errorWhenTypeParsingFails)
             {
                 std::basic_string<CHAR> msg{s::errorParserValueConversion};
                 msg += s::to_string(ResultValueView::GetPosition());
@@ -2470,11 +2506,14 @@ namespace yaclap
 
         if (state < State::FullVal || state > State::ExpVal)
         {
-            std::basic_string<CHAR> msg{s::errorParserValueConversion};
-            msg += s::to_string(ResultValueView::GetPosition());
-            msg += s::errorContextSeparator;
-            msg += s::errorMissingInput;
-            m_errorInfo->SetError(msg);
+            if (errorWhenTypeParsingFails)
+            {
+                std::basic_string<CHAR> msg{s::errorParserValueConversion};
+                msg += s::to_string(ResultValueView::GetPosition());
+                msg += s::errorContextSeparator;
+                msg += s::errorMissingInput;
+                m_errorInfo->SetError(msg);
+            }
             return std::nullopt;
         }
 

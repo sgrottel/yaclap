@@ -262,15 +262,23 @@ The include path will automatically be set accordingly, so you can
 
 ### Integration via Code Copy
 Alternatively you can just copy the contents of a [release zip](https://github.com/sgrottel/yaclap/releases) or the contents of the [include](./include) directory to your project (not recommended).
-It's recommended you place the files into a separate subdirectory and add that directory to your include directories compiler options, for separation of concerns.
+If you do, you should place the files into a separate subdirectory and add that directory to your include directories compiler options, for separation of concerns.
+
+
+## Development
+This project uses CMake.
+
+```pwsh
+cmake -S . -B build -G Ninja
+cmake --build build
+.\build\test\yaclap_tests.exe
+```
 
 
 ## Fuzz Test
 The yaclap library is fuzz tested.
 
 For details on how to run the fuzz tests yourself see: [fuzzing/README.md](fuzzing/README.md)
-
-🚧 TODO: Fuzz test results published
 
 
 ## Report Issues
@@ -319,7 +327,7 @@ This library is freely available as open source under the [MIT License](./LICENS
 
 > MIT License
 > 
-> Copyright (c) 2024-2025 Sebastian Grottel
+> Copyright (c) 2024-2026 Sebastian Grottel
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
