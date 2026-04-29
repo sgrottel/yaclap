@@ -5,7 +5,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2024-2025 Sebastian Grottel
+// Copyright(c) 2024-2026 Sebastian Grottel
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -30,7 +30,7 @@
 // yaclap semantic version: MAJOR.MINOR.PATCH(.BUILD)
 #define YACLAP_VERSION_MAJOR 0
 #define YACLAP_VERSION_MINOR 4
-#define YACLAP_VERSION_PATCH 1
+#define YACLAP_VERSION_PATCH 2
 #define YACLAP_VERSION_BUILD 0
 #define YACLAP_VERSION_GITHASHSTR ""
 

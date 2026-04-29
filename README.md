@@ -327,7 +327,7 @@ This library is freely available as open source under the [MIT License](./LICENS
 
 > MIT License
 > 
-> Copyright (c) 2024-2025 Sebastian Grottel
+> Copyright (c) 2024-2026 Sebastian Grottel
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
