@@ -17,9 +17,11 @@ You can use the info in the section [Docker](#docker) below, to test fuzzing on 
 
 A full fuzzing test should run for multiple hours or days, with billions of repetitions, to increase the likelihood of uncovering issues.
 
-🚧 TODO Doc full fuzzing run
+Most recent fuzz test run: [2026-01 (results_2026_01.md)](results_2026_01.md)
+- Ran for 5 days = 120 h on a dedicated PC
+- ✅ No issues or crashes found
+- [Full run log available: (fuzz_test_run_2026_01.log)](fuzz_test_run_2026_01.log)
 
-🚧 TODO Doc fuzzing results
 
 ## Docker
 Build the prepared Docker image:
