@@ -298,7 +298,7 @@ namespace yaclap
             return *this;
         }
 
-        inline const auto GetId() const noexcept
+        inline auto GetId() const noexcept
         {
             return m_id;
         }
@@ -1248,7 +1248,7 @@ namespace yaclap
 
     template <typename CHAR>
     template <typename TSTREAMT>
-    void Parser<CHAR>::Result::PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, bool tryUseColor) const
+    void Parser<CHAR>::Result::PrintError(std::basic_ostream<CHAR, TSTREAMT>& stream, [[maybe_unused]] bool tryUseColor) const
     {
         if (Result::m_errorInfo->GetError().empty())
         {
